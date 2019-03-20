@@ -1,9 +1,9 @@
-# Graph Trace Engine
+# Graph Tracing Engine
 
-The Graph Tree Engine is a micro service that allows tracing various data sets through a REST service. 
+The Graph Tracing Engine is a micro service that allows tracing various data sets through a REST service. 
 It supports any kind of topological network, and was originally built for rivers and sewer systems. 
 
-The Graph Tree Engine is a spring-boot application, that uses geotools for reading data sets and JGraphT for 
+The Graph Tracing Engine is a spring-boot application, that uses geotools for reading data sets and JGraphT for 
 tracing. The web services are documented with swagger.
 
 #### Building
@@ -71,14 +71,14 @@ For example: a sample data set containing 400K nodes & 400K edges, with 20 attri
 #### License
 
 (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
-Graph Trace Engine is licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
+Graph Tracing Engine is licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
 You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
-Graph Trace Engine uses the following libraries under the [LGPL license](LGPL.md):
+Graph Tracing Engine uses the following libraries under the [LGPL license](LGPL.md):
 - [GeoTools](http://geotools.org/)
 - [JGraphT](https://jgrapht.org/)
 
-Graph Trace Engine uses a number of libraries licensed under the [Apache License Version 2.0]: 
+Graph Tracing Engine uses a number of libraries licensed under the [Apache License Version 2.0]: 
 - [Spring](http://www.springsource.org/)
 - [Apache Commons IO](http://jakarta.apache.org/commons/)
 - [Google Guava](https://github.com/google/guava)
