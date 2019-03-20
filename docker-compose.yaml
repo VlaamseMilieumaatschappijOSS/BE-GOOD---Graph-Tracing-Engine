@@ -1,0 +1,11 @@
+version: '2'
+services:
+  tomcat:
+    image: tomcat:9-jre11
+    environment:
+      - SPRING_PROFILES_ACTIVE=sample
+    ports:
+    - "8080:8080"
+    volumes:
+    - ./target/vmm-gte-1.0.0-SNAPSHOT.war:/usr/local/tomcat/webapps/ROOT.war
+    - ./sample-data:/usr/local/tomcat/sample-data/

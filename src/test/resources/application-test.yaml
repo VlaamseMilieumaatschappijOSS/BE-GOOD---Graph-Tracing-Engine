@@ -1,0 +1,69 @@
+frequency: 0 0 0 * * ?
+networks:
+  - name: riool
+    nodeType: LOGICAL
+    edgeDataStore:
+      url: file:${temp-directory}/riool/Streng.shp
+    edgeFeature:
+      name: Streng
+      idAttribute: streng_cod
+      userAttributes:
+        - str_type
+        - zuiverings
+        - the_geom
+      filterAttributes:
+        - str_type
+        - afgeleidwa
+        - begin_p
+        - eind_p
+      aggregatedAttributes:
+        - target: ie_agg
+          source: ie
+          method: ADD
+    startAttribute: begin_p
+    endAttribute: eind_p
+    nodeDataStore:
+      url: file:${temp-directory}/riool/Punt.shp
+    nodeFeature:
+      name: Punt
+      idAttribute: punt_code_
+      userAttributes:
+        - status
+        - peil
+        - the_geom
+      filterAttributes:
+        - status
+        - pnt_type
+        - vhas_code
+  - name: vha
+    nodeType: GEOGRAPHICAL
+    edgeDataStore:
+      url: file:${temp-directory}/vha/vha.shp
+    edgeFeature:
+      name: vha
+      idAttribute: CODE
+      userAttributes:
+        - CATEGORIE
+        - CODE
+        - the_geom
+      filterAttributes:
+        - CATEGORIE
+        - WATERLOOP
+    startAttribute: startPoint(the_geom)
+    endAttribute: endPoint(the_geom)
+    tolerance: 0.00001
+connections:
+  - sourceNetwork: riool
+    targetNetwork: vha
+    referenceAttribute: vhas_code
+    connectionType: PROJECTED
+areas:
+  - name: Risicogebied
+    dataStore:      
+      url: file:${temp-directory}/areas/Risicogebied.shp
+    nativeName: Risicogebied
+    attributes:
+      - Zone
+      - Oppervlakt
+      - EXTRA
+      - the_geom

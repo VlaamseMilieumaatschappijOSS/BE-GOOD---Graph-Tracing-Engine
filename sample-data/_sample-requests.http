@@ -1,0 +1,204 @@
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+
+# Write a shapefile that represents the created graph in the runtime path.
+GET http://localhost:8080/debug/graph-shape
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "riool",
+ "startId": "ZG018_291505",
+ "maxDistance": 800,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}
+
+200 (application/json)
+<> response-1.json
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "riool",
+ "startId": "ZG018_291505",
+ "networks": [
+    {"name": "riool", 
+     "maxDistance": 500,
+     "edgeFilter": "str_type = 'r_streng'",
+     "nodeFilter": "status = 'funct'"},
+    {"name": "vha", 
+     "maxDistance": 500}
+ ]
+}
+
+200 (application/json)
+<> response-2.json
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "riool",
+ "upstream": true,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}
+
+200 (application/json)
+<> response-3.json
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "vha",
+ "startId": "6038245",
+ "upstream": true,
+ "maxDistance": 1000,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}
+
+200 (application/json)
+<> response-4.json
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "vha",
+ "maxDistance": 3000,
+ "networks": [
+    {"name": "riool",
+     "edgeAggregates": ["ie_agg"]},
+    {"name": "vha"}
+ ]
+}
+
+200 (application/json)
+<> response-5.json
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "riool",
+ "startId": "ZG018_291505",
+ "maxDistance": 10000,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}
+
+200 (application/json)
+<> response-6.jsonv
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "vha",
+ "startId": "6038244",
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ],
+ "includeOverlappingAreas": true
+}
+
+200 (application/json)
+<> response-areas.json
+
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{"startNetwork": "riool",
+ "startId": "ZG018_356144",
+ "upstream": true,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}
+
+200 (application/json)
+<> response-empty.json
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+
+{"startNetwork": "riool",
+ "startId": "ZG018_291505",
+ "maxDistance": 3000,
+ "limit": 1,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}
+
+200 (application/json)
+<> response-limit.json
+
+###
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{
+  "startNetwork": "riool",
+  "startId": "STR_HP_42367",
+  "networks": [
+    {
+      "name": "riool",
+      "edgeFilter": "(status = 'funct') AND NOT (str_type = 'r_streng' OR afgeleidwa = 'gemengd') "
+    }
+  ]
+}
+}
+200 (application/json)
+<> response-filter.json
+
+### example of a date filter, but doesn't work on the sample data (no date fields)
+
+POST http://localhost:8080/trace
+Content-Type: application/json
+
+{
+  "startNetwork": "riool",
+  "startId": "ZG018_291505",
+  "networks": [
+    {
+      "name": "riool",
+      "maxDistance": 5,
+      "nodeFilter": "(aanleg_datum < '2018-12-14 00:00:00' AND eind_datum > '2018-12-14 00:00:00')"
+    }
+  ]
+}

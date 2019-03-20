@@ -1,0 +1,18 @@
+# Frequency at which the graph should be updated (CRON syntax)
+frequency: 0 0 0 * * ?
+
+# Enable response compression
+server.compression.enabled: true
+
+# The comma-separated list of mime types that should be compressed
+server.compression.mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+
+# Compress the response only if the response size is at least 1KB
+server.compression.min-response-size: 1024
+
+# Enable HTTP/2 support, if the current environment supports it
+server.http2.enabled: true
+
+info.app.version: '@project.version@'
+info.app.title: 'Graph Tracing Engine API'
+info.app.description: 'Build @maven.build.timestamp@'

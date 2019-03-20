@@ -1,0 +1,133 @@
+# Configuration of the different networks
+networks:
+  # Name of the network
+  - name: riool
+    # Type of the network:
+    #   LOGICAL: the network is connected by foreign keys, defined in edges and (optionally) nodes
+    #   GEOGRAPHICAL: the network consists of edges that are connected using their geographical location
+    nodeType: LOGICAL
+    # Datastore that contains the edges, use geotools style connection parameters
+    # See http://docs.geotools.org/stable/userguide/library/jdbc and
+    # http://docs.geotools.org/stable/userguide/library/data
+    # for more information
+    # example for postgis:
+    # edgeDataStore:
+    #   dbtype: postgis
+    #   host: mypg.host.ber
+    #   port: 5432
+    #   schema: myschema
+    #   database: mydb
+    #   user: myuser
+    #   passwd: mypassword
+    edgeDataStore:
+      url: file:sample-data/Streng.shp
+    # Configuration of the edge feature type
+    edgeFeature:
+      # Name of the edge data source (i.e. database table)
+      name: Streng
+      # ID attribute, put "@id" here if you want to use the primary key
+      idAttribute: streng_cod
+      # List of attributes that are returned to the client in the tracing result
+      # remember to include the geometry! don't include PK.
+      # these attributes will be available for filtering as well and must not be explicitly 
+      # be listed there as well
+      userAttributes:
+        - str_type
+        - zuiverings
+        - the_geom
+      # List of attributes that are available for filtering (don't include PK)
+      filterAttributes:
+        - str_type
+        - afgeleidwa
+        - begin_p
+        - eind_p
+      # List of attributes you want to aggregate, currently only supported for edges
+      aggregatedAttributes:
+        - target: ie_agg
+          source: ie
+          method: ADD
+    # Foreign key to the node that represents the beginning and ending nodes of an edge,
+    # CQL expressions are also supported here 
+    # (see http://docs.geotools.org/latest/userguide/library/cql/index.html
+    # http://www.opengeospatial.org/standards/cat)
+    # any attribute used here must also be in userAttributes _or_ filterAttributes!
+    startAttribute: begin_p
+    endAttribute: eind_p
+    # Node configuration is necessary for LOGICAL, but not for GEOGRAPHICAL node types.
+    # Node DataStore is optional. If it is not included, by default the same datastore 
+    # as for the edges will be used.
+    nodeDataStore:
+      url: file:sample-data/Punt.shp
+    # Node feature is configured similarly to edge feature
+    nodeFeature:
+      name: Punt
+      idAttribute: punt_code_
+      userAttributes:
+        - status
+        - peil
+        - the_geom
+      filterAttributes:
+        - status
+        - pnt_type
+        - vhas_code
+  - name: vha
+    nodeType: GEOGRAPHICAL
+    edgeDataStore:
+      url: file:sample-data/vha.shp
+    edgeFeature:
+      name: vha
+      idAttribute: CODE
+      userAttributes:
+        - CATEGORIE
+        - CODE
+        - the_geom
+      filterAttributes:
+        - CATEGORIE
+        - WATERLOOP
+    # In case of a geographical network, these must represent the start and end geographies
+    # CQL expressions are also supported here
+    # (see http://docs.geotools.org/latest/userguide/library/cql/index.html
+    # http://www.opengeospatial.org/standards/cat)
+    startAttribute: startPoint(the_geom)
+    endAttribute: endPoint(the_geom)
+    # Tolerance for connecting edges
+    tolerance: 0.00001
+
+# Definition of the connections between networks
+connections:
+    # The source network
+  - sourceNetwork: riool
+    # The target network
+    targetNetwork: vha
+    # The type of connection
+    #   PROJECTED: the networks are connected trough a logic projection, this means that in the source
+    #   network a node attribute (referenceAttribute below) is available that points to an edge in the target network.
+    #   A connection is then made between the node of the source network to the closest point on the referred edge on the
+    #   target network.    
+    #   START: connect to the start node of the referred edge
+    #   END: connect to the end node of the referred edge 
+    #   none: connect from node to node (reference attribute must point to node)
+    connectionType: PROJECTED
+    # if you specify no reference attribute, networks will be connected via projection on to the nearest feature
+    referenceAttribute: vhas_code
+
+# Areas that should be included in the tracing result (when there is overlap)
+areas:
+- name: Risicogebieden
+  # Datastore that contains the regions, use geotools style connection parameters
+  # See http://docs.geotools.org/stable/userguide/library/jdbc and
+  # http://docs.geotools.org/stable/userguide/library/data
+  # for more information
+  dataStore:
+    url: file:sample-data/Risicogebied.shp
+  # Native name (for example, table in database)
+  nativeName: Risicogebied
+  # Attributes included in response (don't include PK)
+  attributes:
+  - Zone
+  - the_geom
+
+# Frequency at which the graph should be updated (CRON syntax)
+frequency: 0 0 0 * * ?
+
+

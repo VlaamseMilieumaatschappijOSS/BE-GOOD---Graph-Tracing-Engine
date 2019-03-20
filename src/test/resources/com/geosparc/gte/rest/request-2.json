@@ -1,0 +1,11 @@
+{"startNetwork": "riool",
+ "startId": "ZG018_291505",
+ "networks": [
+    {"name": "riool", 
+     "maxDistance": 500,
+     "edgeFilter": "str_type = 'r_streng'",
+     "nodeFilter": "status = 'funct'"},
+    {"name": "vha", 
+     "maxDistance": 500}
+ ]
+}

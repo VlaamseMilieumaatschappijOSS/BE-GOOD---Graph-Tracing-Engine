@@ -1,0 +1,8 @@
+{"startNetwork": "riool",
+ "startId": "ZG018_356144",
+ "upstream": true,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}

@@ -1,0 +1,9 @@
+{"startNetwork": "riool",
+ "startId": "ZG018_291505",
+ "maxDistance": 3000,
+ "networks": [
+    {"name": "riool",
+     "edgeAggregates": ["ie_agg"]},
+    {"name": "vha"}
+ ]
+}

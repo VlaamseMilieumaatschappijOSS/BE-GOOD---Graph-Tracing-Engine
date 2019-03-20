@@ -1,0 +1,8 @@
+{"startNetwork": "vha",
+ "startId": "6038244",
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ],
+ "includeOverlappingAreas": true
+}

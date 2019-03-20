@@ -1,0 +1,9 @@
+{"startNetwork": "vha",
+ "startId": "6038245",
+ "upstream": true,
+ "maxDistance": 1000,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}

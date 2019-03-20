@@ -1,0 +1,84 @@
+{
+  "warnings": [],
+  "graph": {
+    "vertices": [
+      {
+        "data": {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              71729.6201,
+              213895.1609
+            ]
+          },
+          "properties": {
+            "status": "funct",
+            "peil": 0
+          },
+          "id": "Punt.21"
+        },
+        "in": [],
+        "id": "riool:ZG018_295996",
+        "out": [
+          "riool:STR_HP_42367"
+        ]
+      },
+      {
+        "data": {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              71728.59,
+              213900.8308
+            ]
+          },
+          "properties": {
+            "status": "funct",
+            "peil": 0
+          },
+          "id": "Punt.4"
+        },
+        "distance": 5.762693921891182,
+        "in": [
+          "riool:STR_HP_42367"
+        ],
+        "id": "riool:ZG018_11660",
+        "out": []
+      }
+    ],
+    "edges": [
+      {
+        "data": {
+          "type": "Feature",
+          "geometry": {
+            "type": "MultiLineString",
+            "coordinates": [
+              [
+                [
+                  71729.6201,
+                  213895.1609
+                ],
+                [
+                  71728.59,
+                  213900.8308
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "str_type": "drempel",
+            "zuiverings": "018"
+          },
+          "id": "Streng.67"
+        },
+        "ie_agg": 39,
+        "weight": 5.762693921891182,
+        "from": "riool:ZG018_295996",
+        "id": "riool:STR_HP_42367",
+        "to": "riool:ZG018_11660"
+      }
+    ]
+  }
+}
