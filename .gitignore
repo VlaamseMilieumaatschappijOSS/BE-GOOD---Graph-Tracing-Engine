@@ -26,7 +26,6 @@
 
 ### Maven ###
 .m2
-.mvn
 
 ### Test zip files ###
 *.zip
