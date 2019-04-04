@@ -138,6 +138,9 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 						fac.property(networkConfig.getEndAttribute()), 
 						networkConfig.getEdgeFeature().getAllAttributes());
 				
+				edgeStore.dispose();
+				nodeStore.dispose();
+				
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, "Failed to add network " + networkConfig.getName(), e);
 			}
@@ -156,6 +159,8 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 						CQL.toExpression(networkConfig.getEndAttribute()), 
 						networkConfig.getEdgeFeature().getAllAttributes(), 
 						networkConfig.getTolerance());
+				
+				edgeStore.dispose();
 				
 			} catch (IOException | CQLException e) {
 				LOGGER.log(Level.SEVERE, "Failed to add network " + networkConfig.getName(), e);
@@ -371,6 +376,9 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 					list.add(it.next());
 				}
 				result.put(areasConfig.getName(), list);
+				
+				it.close();
+				store.dispose();
 			} catch (IOException e) {
 				throw new IllegalStateException(e);
 			}

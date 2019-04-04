@@ -131,6 +131,7 @@ public class FeatureGraphBuilder {
         		}
         		v.setData(sf);  
         	}
+        	iterator.close();
         }
 	}
 		
@@ -185,6 +186,7 @@ public class FeatureGraphBuilder {
 	    			}
     			}
         	}
+        	iterator.close();
         }
 	}
 	
@@ -225,6 +227,7 @@ public class FeatureGraphBuilder {
     					Geometry.class).buffer(tolerance);
         		quadTree.insert(fromBuffered.getEnvelopeInternal(), edgeId);
         	}
+        	iterator.close();
         }
         
         for (Entry<GlobalId, SimpleFeature> edgeEntry : edges.entrySet()) {
