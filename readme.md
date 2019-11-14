@@ -1,5 +1,4 @@
-# Graph Tracing Engine                                                                        
-![BE-GOOD logo](BE-GOOD_logo.png)
+# Graph Tracing Engine                                              <img align="right" src="BE-GOOD logo.png" width="250">                                                       
 
 The Graph Tracing Engine is a micro service that allows tracing various data sets through a REST service. 
 It supports any kind of topological network, and was originally built for rivers and sewer systems. 
