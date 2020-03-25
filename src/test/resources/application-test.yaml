@@ -69,8 +69,8 @@ areas:
       - the_geom
   - name: Risicogebieden2
     dataStore:      
-      url: file:${temp-directory}/areas/Risicogebied2.shp
-    nativeName: Risicogebied2
+      url: file:${temp-directory}/areas2/Risicogebied.shp
+    nativeName: Risicogebied
     attributes:
       - Zone
       - Oppervlakt

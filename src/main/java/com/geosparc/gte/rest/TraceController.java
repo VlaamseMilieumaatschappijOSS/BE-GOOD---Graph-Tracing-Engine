@@ -240,6 +240,14 @@ public class TraceController {
 		if (request.getNetworks() == null) {
 			throw new IllegalArgumentException("missing_networks");
 		}
+		
+		if (request.getOverlappingTypes() != null) {
+			for (String type : request.getOverlappingTypes()) {
+				 if (config.findAreasByName(type) == null) {
+					 LOGGER.warning("Overlapping areas type doesn't exist: " + type);
+				 }
+			}
+		}
 
 		return engine.trace(
 				new GlobalId(request.getStartNetwork(), request.getStartId()),
@@ -251,6 +259,7 @@ public class TraceController {
 				request.getNetworks().stream().map(n -> n.getEdgeAggregates()).collect(Collectors.toList()),
 				request.isUpstream(),
 				request.isIncludeOverlappingAreas(),
+				request.getOverlappingTypes(),
 				request.getLimit());
 	}
 	

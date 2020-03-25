@@ -203,7 +203,7 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 			List<String> networks, List<String> nodeFilters, List<String> edgeFilters,
 					List<Double> maxDistances, List<List<String>> edgeAggregatedAtts,
 					boolean upstream, boolean includeOverlappingAreas,
-					Long limit) 
+					List<String> overlapTypes, Long limit) 
 					throws CQLException {
 		synchronized (graph) {
 			FeatureGraphTracer tracer = new FeatureGraphTracer(graph, startNode, upstream, limit);
@@ -288,7 +288,7 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 			}
 			
 			return new GraphTracingResultImpl(trace, distances, aggregates,
-					includeOverlappingAreas ? findOverlappingAreas(trace) : null,
+					includeOverlappingAreas ? findOverlappingAreas(trace, overlapTypes) : null,
 					tracer.orderEdges(trace),
 					tracer.orderVertices(trace),
 					tracer.isLimitReached());
@@ -340,47 +340,49 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 	 */
 	protected Map<String, List<SimpleFeature>> 
 		findOverlappingAreas(Graph<Idp<GlobalId, SimpleFeature>, 
-		Idp<GlobalId, SimpleFeature>> trace) {
+		Idp<GlobalId, SimpleFeature>> trace, List<String> types) {
 		
 		Map<String, List<SimpleFeature>> result = new HashMap<>();
 		
 		for (AreasConfig areasConfig : config.getAreas()) {
-			DataStore store;
-			try {
-				store = DataStoreFinder.getDataStore(areasConfig.getDataStore());
-				
-				if (store == null) {
-					throw new IllegalStateException("Failed to find datastore for areas " + 
-							areasConfig.getName());
+			if (types == null || types.contains(areasConfig.getName())) {
+				DataStore store;
+				try {
+					store = DataStoreFinder.getDataStore(areasConfig.getDataStore());
+					
+					if (store == null) {
+						throw new IllegalStateException("Failed to find datastore for areas " + 
+								areasConfig.getName());
+					}
+					
+					SimpleFeatureSource source = store.getFeatureSource(
+							areasConfig.getNativeName() == null ? areasConfig.getName() :
+									areasConfig.getNativeName());
+					
+					List<Filter> filters = new ArrayList<>();				
+					for (Idp<GlobalId, SimpleFeature> edge : trace.edgeSet()) {
+						filters.add(fac.intersects(
+								fac.property(source.getSchema().getGeometryDescriptor().getLocalName()),
+								fac.literal(edge.getData().getDefaultGeometry())));
+					}
+	
+					Query query = new Query();
+					query.setPropertyNames(areasConfig.getAttributes());
+					query.setFilter(fac.or(filters));
+					SimpleFeatureIterator it
+						= source.getFeatures(query).features();
+	
+					List<SimpleFeature> list = new ArrayList<>();
+					while (it.hasNext()) {
+						list.add(it.next());
+					}
+					result.put(areasConfig.getName(), list);
+					
+					it.close();
+					store.dispose();
+				} catch (IOException e) {
+					throw new IllegalStateException(e);
 				}
-				
-				SimpleFeatureSource source = store.getFeatureSource(
-						areasConfig.getNativeName() == null ? areasConfig.getName() :
-								areasConfig.getNativeName());
-				
-				List<Filter> filters = new ArrayList<>();				
-				for (Idp<GlobalId, SimpleFeature> edge : trace.edgeSet()) {
-					filters.add(fac.intersects(
-							fac.property(source.getSchema().getGeometryDescriptor().getLocalName()),
-							fac.literal(edge.getData().getDefaultGeometry())));
-				}
-
-				Query query = new Query();
-				query.setPropertyNames(areasConfig.getAttributes());
-				query.setFilter(fac.or(filters));
-				SimpleFeatureIterator it
-					= source.getFeatures(query).features();
-
-				List<SimpleFeature> list = new ArrayList<>();
-				while (it.hasNext()) {
-					list.add(it.next());
-				}
-				result.put(areasConfig.getName(), list);
-				
-				it.close();
-				store.dispose();
-			} catch (IOException e) {
-				throw new IllegalStateException(e);
 			}
 		}
 		

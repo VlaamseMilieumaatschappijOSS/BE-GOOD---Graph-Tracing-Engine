@@ -122,6 +122,11 @@ public class TraceRequest {
 	private boolean includeOverlappingAreas;
 	
 	/**
+	 * list of overlapping types included in overlap
+	 */
+	private List<String> overlappingTypes;
+	
+	/**
 	 * maximum amount of edges per single path
 	 */
 	private Long limit;
@@ -180,6 +185,14 @@ public class TraceRequest {
 
 	public void setLimit(Long limit) {
 		this.limit = limit;
+	}
+
+	public List<String> getOverlappingTypes() {
+		return overlappingTypes;
+	}
+
+	public void setOverlappingTypes(List<String> overlappingTypes) {
+		this.overlappingTypes = overlappingTypes;
 	}
 	
 }
