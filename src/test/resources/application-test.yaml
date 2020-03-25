@@ -58,10 +58,19 @@ connections:
     referenceAttribute: vhas_code
     connectionType: PROJECTED
 areas:
-  - name: Risicogebied
+  - name: Risicogebieden
     dataStore:      
       url: file:${temp-directory}/areas/Risicogebied.shp
     nativeName: Risicogebied
+    attributes:
+      - Zone
+      - Oppervlakt
+      - EXTRA
+      - the_geom
+  - name: Risicogebieden2
+    dataStore:      
+      url: file:${temp-directory}/areas/Risicogebied2.shp
+    nativeName: Risicogebied2
     attributes:
       - Zone
       - Oppervlakt

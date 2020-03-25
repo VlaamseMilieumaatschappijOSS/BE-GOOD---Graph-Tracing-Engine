@@ -67,6 +67,7 @@ public class TraceControllerTest {
 		TestUtilities.unzip("shape/riool.zip", testFolder.getRoot());
 		TestUtilities.unzip("shape/vha.zip", testFolder.getRoot());
 		TestUtilities.unzip("shape/areas.zip", testFolder.getRoot());
+		TestUtilities.unzip("shape/areas2.zip", testFolder.getRoot());
 		System.setProperty("temp-directory", testFolder.getRoot().getAbsolutePath());
 	}
 	
@@ -303,6 +304,15 @@ public class TraceControllerTest {
 		assertEquals(1, o.getJSONArray("warnings").length());
 		assertEquals("The maximum size of the search query was reached. The returned result might be incomplete.", 
 				o.getJSONArray("warnings").get(0));
+	}
+	
+	@Test
+	public void testOverlaptypes() throws IOException, JSONException {
+		String response =  restTemplate.getForObject(
+				"http://localhost:" + port + "/overlapTypes", 
+				String.class);
+		JSONArray a = new JSONArray(response);
+		System.out.println(a);
 	}
 
 }

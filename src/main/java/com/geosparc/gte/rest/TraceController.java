@@ -13,6 +13,8 @@ import com.geosparc.graph.base.JsonWrapper;
 import com.geosparc.graph.geo.FeatureJsonExporter;
 import com.geosparc.graph.geo.GlobalId;
 import com.geosparc.graph.geo.ShapeExporter;
+import com.geosparc.gte.config.AreasConfig;
+import com.geosparc.gte.config.GteConfig;
 import com.geosparc.gte.engine.GraphTracingEngine;
 import com.geosparc.gte.engine.GraphTracingResult;
 import com.geosparc.gte.rest.TraceRequest.TraceRequestNetwork;
@@ -31,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -67,6 +70,9 @@ public class TraceController {
 
 	@Autowired
 	private GraphTracingEngine engine;
+	
+	@Autowired
+	private GteConfig config;
 
     @Autowired
     private MessageSource messageSource;
@@ -247,5 +253,16 @@ public class TraceController {
 				request.isIncludeOverlappingAreas(),
 				request.getLimit());
 	}
+	
+	@ApiOperation("Perform a trace and retrieve the result in json.")
+	@GetMapping(value = "/overlapTypes", produces = "application/json")
+	public List<String> overlapAreaTypes() {
+		List<String> list = new ArrayList<>();
+		for (AreasConfig config : config.getAreas()) {
+			list.add(config.getName());
+		}
+		return list;		
+	}
+
 
 }
