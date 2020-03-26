@@ -70,6 +70,16 @@ public class GteConfig {
 		this.areas = areas;
 	}
 	
+	public AreasConfig findAreasByName(String name) {
+		for (AreasConfig areasConfig : areas) {
+			if (areasConfig.getName().equals(name)) {
+				return areasConfig;
+			}
+		}
+		return null;
+	}
+
+	
 	public void validate() {
 		for (NetworkConfig networkConfig : getNetworks()) {
 			networkConfig.validate();

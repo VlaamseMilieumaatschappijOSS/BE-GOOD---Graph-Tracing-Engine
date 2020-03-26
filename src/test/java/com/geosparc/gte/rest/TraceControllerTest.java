@@ -67,6 +67,7 @@ public class TraceControllerTest {
 		TestUtilities.unzip("shape/riool.zip", testFolder.getRoot());
 		TestUtilities.unzip("shape/vha.zip", testFolder.getRoot());
 		TestUtilities.unzip("shape/areas.zip", testFolder.getRoot());
+		TestUtilities.unzip("shape/areas2.zip", testFolder.getRoot());
 		System.setProperty("temp-directory", testFolder.getRoot().getAbsolutePath());
 	}
 	
@@ -189,11 +190,12 @@ public class TraceControllerTest {
 		ResponseEntity<String> response = trace("request-areas.json");
 
 		JSONObject o = new JSONObject(response.getBody());
+		System.out.println(o);
 		
 		JSONObject areas = o.getJSONObject("overlappingAreas");
 		assertEquals(1, areas.length());
 		
-		JSONArray areasRisico = areas.getJSONArray("Risicogebied");
+		JSONArray areasRisico = areas.getJSONArray("Risicogebieden");
 		assertEquals(2, areasRisico.length());
 		JSONObject f = areasRisico.getJSONObject(0);
 		assertNotNull(f.getJSONObject("geometry"));
@@ -202,6 +204,27 @@ public class TraceControllerTest {
 		assertEquals(3, fp.length());
 		assertNotNull(fp.getString("Zone"));
 	}
+
+	@Test
+	public void testRequestWithAreas2() throws JSONException, IOException {
+
+		ResponseEntity<String> response = trace("request-areas2.json");
+
+		JSONObject o = new JSONObject(response.getBody());
+		
+		JSONObject areas = o.getJSONObject("overlappingAreas");
+		assertEquals(2, areas.length());
+		
+		JSONArray areasRisico = areas.getJSONArray("Risicogebieden2");
+		assertEquals(2, areasRisico.length());
+		JSONObject f = areasRisico.getJSONObject(0);
+		assertNotNull(f.getJSONObject("geometry"));
+		JSONObject fp = f.getJSONObject("properties");
+		assertNotNull(fp);
+		assertEquals(3, fp.length());
+		assertNotNull(fp.getString("Zone"));
+	}
+	
 	
 	@Test
 	public void testZipfile() throws IOException {
@@ -303,6 +326,15 @@ public class TraceControllerTest {
 		assertEquals(1, o.getJSONArray("warnings").length());
 		assertEquals("The maximum size of the search query was reached. The returned result might be incomplete.", 
 				o.getJSONArray("warnings").get(0));
+	}
+	
+	@Test
+	public void testOverlaptypes() throws IOException, JSONException {
+		String response =  restTemplate.getForObject(
+				"http://localhost:" + port + "/overlapTypes", 
+				String.class);
+		JSONArray a = new JSONArray(response);
+		System.out.println(a);
 	}
 
 }

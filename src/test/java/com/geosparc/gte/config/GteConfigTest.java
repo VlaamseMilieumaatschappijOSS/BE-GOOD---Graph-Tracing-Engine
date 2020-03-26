@@ -104,9 +104,9 @@ public class GteConfigTest {
 		assertEquals("vhas_code", conn.getReferenceAttribute());
 		assertEquals(ConnectionType.PROJECTED, conn.getConnectionType());
 		
-		assertEquals(1, configuration.getAreas().size());	
+		assertEquals(2, configuration.getAreas().size());	
 		AreasConfig areas = configuration.getAreas().get(0);
-		assertEquals("Risicogebied", areas.getName());
+		assertEquals("Risicogebieden", areas.getName());
 		assertEquals("Risicogebied", areas.getNativeName());
 		assertEquals("file:/my/dir/areas/Risicogebied.shp", 
 				areas.getDataStore().get("url"));

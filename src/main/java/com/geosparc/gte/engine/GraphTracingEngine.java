@@ -43,7 +43,7 @@ public interface GraphTracingEngine {
 	GraphTracingResult trace(GlobalId startNode, Double maxDistance, 
 			List<String> networks, List<String> nodeFilters, List<String> edgeFilters,
 			List<Double> maxDistances, List<List<String>> edgeAggregatedAtts, boolean upstream,
-			boolean includeOverlappingAreas, Long limit) throws CQLException;
+			boolean includeOverlappingAreas, List<String> overlapTypes, Long limit) throws CQLException;
 
 	/**
 	 * Return a list of all networks.

@@ -5,5 +5,5 @@
     {"name": "vha"}
  ],
  "includeOverlappingAreas": true,
- "overlappingTypes": ["Risicogebieden"]
+ "overlappingTypes": ["Risicogebieden", "Risicogebieden2", "bestaatniet"]
 }
