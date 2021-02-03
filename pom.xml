@@ -5,7 +5,7 @@
 
 	<groupId>com.geosparc</groupId>
 	<artifactId>vmm-gte</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.8-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<name>vmm-gte</name>
@@ -39,6 +39,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<build.timestamp>${maven.build.timestamp}</build.timestamp>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>						   																					 
 		<java.version>8</java.version>
 		<geotools.version>20.0</geotools.version>
 	</properties>
@@ -65,7 +67,11 @@
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
 		<dependency>
 		    <groupId>commons-io</groupId>
 		    <artifactId>commons-io</artifactId>

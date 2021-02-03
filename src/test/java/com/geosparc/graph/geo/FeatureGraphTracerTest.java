@@ -1,29 +1,19 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.graph.geo;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import org.geotools.factory.CommonFactoryFinder;
-import org.jgrapht.Graph;
-import org.junit.Test;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.filter.FilterFactory2;
 
 import com.geosparc.graph.base.DGraph;
 import com.geosparc.graph.base.Idp;
 import com.geosparc.graph.geo.GlobalId.Type;
 import com.geosparc.gte.TestData;
 import com.geosparc.gte.config.ConnectionConfig.ConnectionType;
+import org.geotools.factory.CommonFactoryFinder;
+import org.jgrapht.Graph;
+import org.junit.Test;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.filter.FilterFactory2;
+
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
 
 public class FeatureGraphTracerTest {
 	
@@ -48,7 +38,32 @@ public class FeatureGraphTracerTest {
 				fac.function("startPoint", fac.property("geom")),
 				fac.function("endPoint", fac.property("geom")),
 				null, 0.001);
-		graphBuilder.addConnection("testL", "testG", 
+		graphBuilder.addGeographicalEdges("testCycle",
+				TestData.getGeoEdgesWithCycle(),
+				fac.property("id"),
+				fac.function("startPoint", fac.property("geom")),
+				fac.function("endPoint", fac.property("geom")),
+				null, 0.001);
+		graphBuilder.addGeographicalEdges("testComplexCycle",
+				TestData.getGeoEdgesWithComplexCycle(),
+				fac.property("id"),
+				fac.function("startPoint", fac.property("geom")),
+				fac.function("endPoint", fac.property("geom")),
+				null, 0.001);
+		graphBuilder.addGeographicalEdges("testSplitMerge",
+				TestData.getGeoEdgesSplitMerges(),
+				fac.property("id"),
+				fac.function("startPoint", fac.property("geom")),
+				fac.function("endPoint", fac.property("geom")),
+				null, 0.001);
+		graphBuilder.addGeographicalEdges("testLargeRaster",
+				TestData.getGeoEdgesLargeRaster(),
+				fac.property("id"),
+				fac.function("startPoint", fac.property("geom")),
+				fac.function("endPoint", fac.property("geom")),
+				null, 0.001);
+
+		graphBuilder.addConnection("testL", "testG",
 				fac.property("ref"), ConnectionType.PROJECTED);
 		
 		return graphBuilder.get();
@@ -162,9 +177,19 @@ public class FeatureGraphTracerTest {
 		assertFalse(trace.containsEdge(graph.getEdgeById(new GlobalId("testL","12"))));
 		assertFalse(trace.containsEdge(graph.getEdgeById(new GlobalId("testL","23"))));
 
-		
 	}
-	
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testFeatureGraphTraceNodeBadStartId() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph = createGraph();
+
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, new GlobalId("testL", "222"), false);
+
+		tracer.addNetwork("testL");
+		tracer.addNetwork("testG");
+		tracer.trace();
+	}
+
 	@Test
 	public void testFeatureGraphTraceNodeFilter2() throws Exception {
 		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph
@@ -187,10 +212,38 @@ public class FeatureGraphTracerTest {
 		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testG","testL.3-c", Type.GENERATED))));
 		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testG","testL.3-c+", Type.GENERATED))));
 
-		
 	}
-	
-	
+
+	@Test
+	public void testFeatureGraphTraceNodeFilterStartWithFilteredNode() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph = createGraph();
+
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, new GlobalId("testL", "2"), false);
+
+		tracer.addNetwork("testL");
+		tracer.setVertexFilter("testL",	fac.notEqual(fac.property("code"), fac.literal("x")));
+		Graph<Idp<GlobalId, SimpleFeature>,	Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
+
+		assertTrue(trace.vertexSet().isEmpty());
+		assertTrue(trace.edgeSet().isEmpty());
+
+	}
+
+	@Test
+	public void testFeatureGraphTraceEdgeFilterStartWithFilteredDestNode() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph = createGraph();
+
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, new GlobalId("testL", "12"), false);
+
+		tracer.addNetwork("testL");
+		tracer.setVertexFilter("testL",	fac.notEqual(fac.property("code"), fac.literal("x")));
+		Graph<Idp<GlobalId, SimpleFeature>,	Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
+
+		assertTrue(trace.vertexSet().isEmpty());
+		assertTrue(trace.edgeSet().isEmpty());
+
+	}
+
 	@Test
 	public void testFeatureGraphTraceEdgeFilter() throws Exception {
 		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph
@@ -281,7 +334,57 @@ public class FeatureGraphTracerTest {
 		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testG","testL.3-c+", Type.GENERATED))));
 		
 	}
-	
-	
-	
+
+
+	@Test
+	public void testFeatureGraphTracerCycle() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph = createGraph();
+
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, new GlobalId("testCycle", "a"), false);
+		tracer.addNetwork("testCycle");
+
+		Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
+
+		System.out.println(trace.edgeSet().stream().map(e -> e.toString()).collect(Collectors.joining(", ")));
+		assertEquals(6, trace.edgeSet().size());
+	}
+
+	@Test
+	public void testFeatureGraphTracerComplexCycle() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph = createGraph();
+
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, new GlobalId("testComplexCycle", "a"), false);
+		tracer.addNetwork("testComplexCycle");
+
+		Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
+
+		System.out.println(trace.edgeSet().stream().map(e -> e.toString()).collect(Collectors.joining(", ")));
+		assertEquals(8, trace.edgeSet().size());
+	}
+
+	@Test
+	public void testFeatureGraphSplitMerge() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph = createGraph();
+
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, new GlobalId("testSplitMerge", "a"), false);
+		tracer.addNetwork("testSplitMerge");
+
+		Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
+
+		System.out.println(trace.edgeSet().stream().map(e -> e.toString()).collect(Collectors.joining(", ")));
+		assertEquals(82, trace.edgeSet().size());
+	}
+
+	@Test // (timeout = 10000)
+	public void testFeatureGraphTracerLargeRaster() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph = createGraph();
+
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, new GlobalId("testLargeRaster", "a"), false);
+		tracer.addNetwork("testLargeRaster");
+
+		Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
+
+		System.out.println(trace.edgeSet().stream().map(e -> e.toString()).collect(Collectors.joining(", ")));
+		assertEquals(191, trace.edgeSet().size());
+	}
 }

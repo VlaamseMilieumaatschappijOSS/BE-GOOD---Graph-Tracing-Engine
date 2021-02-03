@@ -1,27 +1,8 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.graph.geo;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.function.Predicate;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
+import com.geosparc.graph.base.Idp;
+import com.geosparc.gte.engine.GraphTracingResult;
+import com.google.common.base.Predicates;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -32,8 +13,15 @@ import org.jgrapht.io.ExportException;
 import org.jgrapht.io.GraphExporter;
 import org.opengis.feature.simple.SimpleFeature;
 
-import com.geosparc.graph.base.Idp;
-import com.google.common.base.Predicates;
+import java.io.*;
+import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * 
@@ -79,13 +67,35 @@ public class ShapeExporter implements GraphExporter<Idp<GlobalId, SimpleFeature>
 		}
 	}
 
+	private void dumpOverlapAreas(ShapefileDumper dumper, String overlapType,
+			List<SimpleFeature> features) throws IOException {
+		if (features.size() > 0) {
+			dumper.dump(overlapType.replace(" ", "_") + "-areas",
+					new OverlapAreaFeatureCollection(features));
+		}
+	}
+
 	@Override
 	public void exportGraph(Graph<Idp<GlobalId, SimpleFeature>, 
 			Idp<GlobalId, SimpleFeature>> graph, OutputStream os)
 			throws ExportException {
+		exportGraph(graph, null, os);
+	}
+
+	public void exportGraph(GraphTracingResult result, OutputStream os)
+			throws ExportException {
+		exportGraph(result.getGraph(), result.getAreas(), os);
+	}
+
+	private void exportGraph(
+			Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> graph,
+			Map<String, List<SimpleFeature>> areas,
+			OutputStream os)
+			throws ExportException {
 		try {
 			File tempDir = Files.createTempDirectory("vmm.shape").toFile();
 			ShapefileDumper dumper = new ShapefileDumper(tempDir);
+			dumper.setCharset(UTF_8);
 
 			for (String network : networks) {
 				dumpSubgraph(dumper, network, graph, 
@@ -103,6 +113,12 @@ public class ShapeExporter implements GraphExporter<Idp<GlobalId, SimpleFeature>
 					}, o -> {return !o.getData().getType().getName().getLocalPart()
 							.equals(FeatureGraphBuilder.CONNECTION_VERTEX);
 					});
+
+			if (areas != null) {
+				for (Map.Entry<String, List<SimpleFeature>> entry : areas.entrySet()) {
+					dumpOverlapAreas(dumper, entry.getKey(), entry.getValue());
+				}
+			}
 			
 			customize(tempDir);
 			
@@ -129,10 +145,6 @@ public class ShapeExporter implements GraphExporter<Idp<GlobalId, SimpleFeature>
 	@Override
 	public void exportGraph(Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> g, Writer writer)
 			throws ExportException {
-		exportGraph(g, new WriterOutputStream(writer, StandardCharsets.UTF_8));
-		
+		exportGraph(g, new WriterOutputStream(writer, UTF_8));
 	}
-	
-	
-
 }

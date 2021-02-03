@@ -1,11 +1,3 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
 package com.geosparc.gte.rest;
 
 import java.util.List;
@@ -90,6 +82,14 @@ public class TraceRequest {
 		}
 		
 	}
+
+	public List<String> getOverlappingTypes() {
+		return overlappingTypes;
+	}
+
+	public void setOverlappingTypes(List<String> overlappingTypes) {
+		this.overlappingTypes = overlappingTypes;
+	}
 	
 	/**
 	 * Start network.
@@ -130,6 +130,11 @@ public class TraceRequest {
 	 * maximum amount of edges per single path
 	 */
 	private Long limit;
+
+	/**
+	 * Stop paths that meet already visited vertices. Limits and predicates will not work correctly.
+	 */
+	private boolean ignorePaths;
 
 	public String getStartNetwork() {
 		return startNetwork;
@@ -187,12 +192,11 @@ public class TraceRequest {
 		this.limit = limit;
 	}
 
-	public List<String> getOverlappingTypes() {
-		return overlappingTypes;
+	public boolean isIgnorePaths() {
+		return ignorePaths;
 	}
 
-	public void setOverlappingTypes(List<String> overlappingTypes) {
-		this.overlappingTypes = overlappingTypes;
+	public void setIgnorePaths(boolean ignorePaths) {
+		this.ignorePaths = ignorePaths;
 	}
-	
 }

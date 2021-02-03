@@ -71,8 +71,26 @@ areas:
     dataStore:      
       url: file:${temp-directory}/areas2/Risicogebied.shp
     nativeName: Risicogebied
+    wmsLayerUrl: wmsLayerUrlTest
+    wmsLayerName: wmsLayerNameTest
+    wmsStyleNaam: wmsStyleNaamTest
+    detailName: detailNameTest
+    propertyForDetail: propertyForDetailTest
+    propertyForFilter: propertyForFilterTest
     attributes:
+      - gid
       - Zone
       - Oppervlakt
       - EXTRA
       - the_geom
+
+
+mailservice:
+  systemevents.to:
+
+spring:
+  mail:
+    host: localhost
+    port: 25
+    from: from@localhost
+    testConnection: false

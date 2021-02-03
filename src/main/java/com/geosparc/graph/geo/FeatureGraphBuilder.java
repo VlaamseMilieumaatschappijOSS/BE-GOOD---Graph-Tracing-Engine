@@ -1,12 +1,3 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.graph.geo;
 
 import java.io.IOException;
@@ -131,7 +122,6 @@ public class FeatureGraphBuilder {
         		}
         		v.setData(sf);  
         	}
-        	iterator.close();
         }
 	}
 		
@@ -171,7 +161,7 @@ public class FeatureGraphBuilder {
         			throw new IllegalArgumentException("end attribute should not return null");
         		}
         		if (from.equals(to)) {
-    				LOGGER.log(Level.WARNING, "Found from node = to node for edge " + id,
+    				LOGGER.log(Level.WARNING, "Found from node = to node for edge " + id +
     						". Skipping...");
     			} else {
 	    			try {
@@ -186,7 +176,6 @@ public class FeatureGraphBuilder {
 	    			}
     			}
         	}
-        	iterator.close();
         }
 	}
 	
@@ -227,7 +216,6 @@ public class FeatureGraphBuilder {
     					Geometry.class).buffer(tolerance);
         		quadTree.insert(fromBuffered.getEnvelopeInternal(), edgeId);
         	}
-        	iterator.close();
         }
         
         for (Entry<GlobalId, SimpleFeature> edgeEntry : edges.entrySet()) {
@@ -306,7 +294,7 @@ public class FeatureGraphBuilder {
 						(Geometry) feature.getDefaultGeometry(), false));
 			} 
 			if (fromNodeId.equals(toNodeId)) {
-				LOGGER.log(Level.WARNING, "Found from node = to node for edge " + id.getIdentifier(),
+				LOGGER.log(Level.WARNING, "Found from node = to node for edge " + id.getIdentifier() +
 						", is your tolerance to high? Skipping...");
 			} else {
 				try {

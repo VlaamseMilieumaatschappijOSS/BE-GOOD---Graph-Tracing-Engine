@@ -14,20 +14,11 @@
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *    Lesser General Public License for more details.
  */
-
-/*
- * This file was copied from the GeoTools code base and edited in order
- * to support custom file names for Shapefile exports.
- * 
- * Simultaneously, a PULL REQUEST was submitted to contribute these changes
- * to the code base of geotools. See: https://github.com/geotools/geotools/pull/2261
- * 
- * As soon as this PR is approved, and the version of geotools used in this project
- * is changed to a new version that includes these changes, this file should be removed.
- * 
- */
-
 package org.geotools.data.shapefile;
+
+/**
+ * EDITED TO SUPPORT CUSTOM FILENAMES OTHER THAN TYPENAME
+ */
 
 import java.io.File;
 import java.io.FileNotFoundException;

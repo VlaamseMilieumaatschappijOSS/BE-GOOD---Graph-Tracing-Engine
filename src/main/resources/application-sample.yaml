@@ -46,6 +46,9 @@ networks:
         - target: ie_agg
           source: ie
           method: ADD
+        - target: split_factor
+          source: ie
+          method: SPLITFACTOR
     # Foreign key to the node that represents the beginning and ending nodes of an edge,
     # CQL expressions are also supported here 
     # (see http://docs.geotools.org/latest/userguide/library/cql/index.html

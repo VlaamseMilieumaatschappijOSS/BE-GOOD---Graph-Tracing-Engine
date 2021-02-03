@@ -1,12 +1,3 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.graph.alg;
 
 import static org.junit.Assert.assertEquals;
@@ -81,11 +72,11 @@ public class TracingTest {
 		assertTrue(g.containsEdge("7->1"));
 		assertTrue(g.containsEdge("4->2"));
 		
-		Map<Integer, Double> weights = tracing.getMimimumWeights(paths);
+		Map<Integer, Double> weights = tracing.getMimimumWeights(tracing.asGraph(paths), 1, null);
 		assertEquals(0.25, weights.get(2), 0.0001);
 		assertEquals(0.6, weights.get(3), 0.0001);
 		assertEquals(0.7, weights.get(4), 0.0001);
-		assertEquals(1.05, weights.get(5), 0.0001);
+		assertEquals(0.85, weights.get(5), 0.0001);
 		assertEquals(1.3, weights.get(6), 0.0001);
 		assertEquals(0.95, weights.get(7), 0.0001);
 		
@@ -105,7 +96,7 @@ public class TracingTest {
 		assertTrue(g.containsEdge("5->6"));
 		assertTrue(g.containsEdge("7->1"));
 		
-		weights = tracing.getMimimumWeights(paths);
+		weights = tracing.getMimimumWeights(tracing.asGraph(paths), 2, null);
 		assertEquals(0.75, weights.get(1), 0.0001);
 		assertEquals(0.35, weights.get(3), 0.0001);
 		assertEquals(0.45, weights.get(4), 0.0001);

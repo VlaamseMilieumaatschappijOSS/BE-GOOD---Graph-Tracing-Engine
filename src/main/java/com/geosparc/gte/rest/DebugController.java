@@ -1,12 +1,3 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.gte.rest;
 
 import java.io.IOException;
@@ -15,6 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jgrapht.io.ExportException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -43,7 +35,7 @@ public class DebugController {
 	private GraphTracingEngine engine;
 
 	@ApiOperation("Get the entire network graph as JSON.")
-	@GetMapping(value = "/graph", produces = "application/json")
+	@GetMapping(value = "/graph", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public void getGraph(
 			@ApiParam("True if you want only features, and no graph structure.")
 			@RequestParam(required = false, defaultValue = "false")

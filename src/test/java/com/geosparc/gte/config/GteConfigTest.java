@@ -1,21 +1,8 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.gte.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-
+import com.geosparc.gte.config.ConnectionConfig.ConnectionType;
+import com.geosparc.gte.config.NetworkConfig.NodeType;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,8 +11,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.geosparc.gte.config.ConnectionConfig.ConnectionType;
-import com.geosparc.gte.config.NetworkConfig.NodeType;
+import java.io.IOException;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes=GteConfig.class)
@@ -96,7 +85,8 @@ public class GteConfigTest {
 		assertTrue(config.getNodeDataStore().isEmpty());
 		assertNull(config.getNodeFeature());
 		assertEquals(0.00001, config.getTolerance(), 0.0000001);
-		
+		assertNotNull("Must contain key: 'Expose primary keys'", config.getEdgeDataStore().get("Expose primary keys"));
+
 		assertEquals(1, configuration.getConnections().size());	
 		ConnectionConfig conn = configuration.getConnections().get(0);
 		assertEquals("riool", conn.getSourceNetwork());
@@ -108,13 +98,27 @@ public class GteConfigTest {
 		AreasConfig areas = configuration.getAreas().get(0);
 		assertEquals("Risicogebieden", areas.getName());
 		assertEquals("Risicogebied", areas.getNativeName());
-		assertEquals("file:/my/dir/areas/Risicogebied.shp", 
-				areas.getDataStore().get("url"));
+		assertEquals("file:/my/dir/areas/Risicogebied.shp", areas.getDataStore().get("url"));
 		assertEquals(4, areas.getAttributes().size());
 		assertEquals("Zone", areas.getAttributes().get(0));
 		assertEquals("Oppervlakt", areas.getAttributes().get(1));
 		assertEquals("EXTRA", areas.getAttributes().get(2));
 		assertEquals("the_geom", areas.getAttributes().get(3));
+
+		AreasConfig areas2 = configuration.getAreas().get(1);
+		assertEquals("Risicogebieden2", areas2.getName());
+		assertEquals(5, areas2.getAttributes().size());
+		assertEquals("gid", areas2.getAttributes().get(0));
+		assertEquals("Zone", areas2.getAttributes().get(1));
+		assertEquals("Oppervlakt", areas2.getAttributes().get(2));
+		assertEquals("EXTRA", areas2.getAttributes().get(3));
+		assertEquals("the_geom", areas2.getAttributes().get(4));
+
+		Map<String, String> ds = areas2.getDataStore();
+		assertNotNull(ds);
+		assertEquals(2, ds.size());
+		System.out.println(ds.toString());
+		assertNotNull("Must contain key: 'Expose primary keys'", ds.get("Expose primary keys"));
 	}
-	
+
 }

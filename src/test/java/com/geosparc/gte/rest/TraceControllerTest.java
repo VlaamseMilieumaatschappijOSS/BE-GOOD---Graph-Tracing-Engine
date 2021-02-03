@@ -1,55 +1,42 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.gte.rest;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
+import com.geosparc.gte.TestUtilities;
+import com.geosparc.gte.VmmGteApplication;
+import com.geosparc.gte.engine.GraphStatus;
+import com.geosparc.gte.engine.GraphTracingEngine;
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.geosparc.gte.TestUtilities;
-import com.geosparc.gte.VmmGteApplication;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {VmmGteApplication.class},
 	webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT) 
 @ActiveProfiles("test")
+@DirtiesContext
 public class TraceControllerTest {
 
     @ClassRule
@@ -57,10 +44,16 @@ public class TraceControllerTest {
     
 	@LocalServerPort
 	private int port;
-	
+
+	@Autowired
+	private GraphTracingEngine graphTracingEngine;
+
+
 	private HttpHeaders headers = new HttpHeaders();
 	
 	private TestRestTemplate restTemplate = new TestRestTemplate();
+
+	private static final List<String> SHAPEFILE_EXTENSIONS = Arrays.asList("prj", "dbf", "shx", "cst", "fix", "shp");
 
 	@BeforeClass
 	public static void beforeClass() throws IOException {
@@ -75,8 +68,9 @@ public class TraceControllerTest {
 	public void before() {
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		headers.setAcceptLanguageAsLocales(Collections.singletonList(Locale.ENGLISH));
+		waitUntilGraphInitialized();
 	}
-	
+
 	private ResponseEntity<String> trace(String requestFileName) throws IOException {
 		
 		HttpEntity<String> entity = new HttpEntity<String>(
@@ -89,19 +83,17 @@ public class TraceControllerTest {
 		
 	}
 		
-	@Test
-	public void testBasicRequest() throws JSONException, IOException {
-		
+	public void testBasicRequest() throws Exception {
 		ResponseEntity<String> response = trace("request-1.json");
 				
 		JSONObject o = new JSONObject(response.getBody());
 
 		assertEquals(0, o.getJSONArray("warnings").length());
-		
+
 		JSONObject g = o.getJSONObject("graph");
 		JSONArray vs = g.getJSONArray("vertices");
 		assertEquals(18, vs.length());
-		assertEquals("riool:ZG018_291505", 
+		assertEquals("riool:ZG018_291505",
 				vs.getJSONObject(0).getString("id"));
 		JSONObject v = vs.getJSONObject(1);
 		assertEquals("riool:ZG018_179130", v.getString("id"));
@@ -119,7 +111,7 @@ public class TraceControllerTest {
 		assertEquals(2, vp.length());
 		assertNotNull(vp.getString("status"));
 		assertNotNull(vp.getString("peil"));
-		
+
 		JSONArray es = g.getJSONArray("edges");
 		assertEquals(17, es.length());
 		JSONObject e = es.getJSONObject(0);
@@ -133,12 +125,12 @@ public class TraceControllerTest {
 		assertNotNull(ep);
 		assertEquals(2, ep.length());
 		assertNotNull(ep.getString("str_type"));
-		assertNotNull(ep.getString("zuiverings"));	
+		assertNotNull(ep.getString("zuiverings"));
 	}
-	
-	@Test
-	public void testFilteredRequest() throws JSONException, IOException {
 
+
+
+	public void testFilteredRequest() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-2.json");
 
 		JSONObject o = new JSONObject(response.getBody());
@@ -151,9 +143,10 @@ public class TraceControllerTest {
 		assertEquals(8, es.length());
 
 	}
-	
-	@Test
+
+	@Test(timeout = 10000)
 	public void testUpstreamRequest() throws JSONException, IOException {
+		waitUntilGraphInitialized();
 
 		ResponseEntity<String> response = trace("request-3.json");
 
@@ -167,10 +160,8 @@ public class TraceControllerTest {
 		assertEquals(2, es.length());
 
 	}
-	
-	@Test
-	public void testRequestByEdge() throws JSONException, IOException {
 
+	public void testRequestByEdge() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-4.json");
 
 		JSONObject o = new JSONObject(response.getBody());
@@ -183,8 +174,6 @@ public class TraceControllerTest {
 
 	}
 	
-
-	@Test
 	public void testRequestWithAreas() throws JSONException, IOException {
 
 		ResponseEntity<String> response = trace("request-areas.json");
@@ -205,9 +194,7 @@ public class TraceControllerTest {
 		assertNotNull(fp.getString("Zone"));
 	}
 
-	@Test
 	public void testRequestWithAreas2() throws JSONException, IOException {
-
 		ResponseEntity<String> response = trace("request-areas2.json");
 
 		JSONObject o = new JSONObject(response.getBody());
@@ -224,9 +211,8 @@ public class TraceControllerTest {
 		assertEquals(3, fp.length());
 		assertNotNull(fp.getString("Zone"));
 	}
-	
-	
-	@Test
+
+
 	public void testZipfile() throws IOException {
 		HttpEntity<String> entity = new HttpEntity<String>(
 				IOUtils.toString(getClass().getResourceAsStream("request-6.json"), "utf-8"),
@@ -247,65 +233,55 @@ public class TraceControllerTest {
 
 		assertEquals(37, fileNames.size());
 		assertTrue(fileNames.contains("trace_info.txt"));
-		assertTrue(fileNames.contains("riool-nodes.dbf"));
-		assertTrue(fileNames.contains("riool-nodes.prj"));
-		assertTrue(fileNames.contains("riool-nodes.cst"));
-		assertTrue(fileNames.contains("riool-nodes.shx"));
-		assertTrue(fileNames.contains("riool-nodes.fix"));
-		
-		assertTrue(fileNames.contains("riool-edges.shp"));
-		assertTrue(fileNames.contains("riool-edges.prj"));
-		assertTrue(fileNames.contains("riool-edges.dbf"));
-		assertTrue(fileNames.contains("riool-edges.shx"));
-		assertTrue(fileNames.contains("riool-edges.cst"));
-		assertTrue(fileNames.contains("riool-edges.fix"));
-		assertTrue(fileNames.contains("riool-edges.shp"));
-		
-		assertTrue(fileNames.contains("vha-edges.prj"));
-		assertTrue(fileNames.contains("vha-edges.dbf"));
-		assertTrue(fileNames.contains("vha-edges.shx"));
-		assertTrue(fileNames.contains("vha-edges.cst"));
-		assertTrue(fileNames.contains("vha-edges.fix"));
-		assertTrue(fileNames.contains("vha-edges.shp"));
-		assertTrue(fileNames.contains("vha-nodes.prj"));
-		assertTrue(fileNames.contains("vha-nodes.dbf"));
-		assertTrue(fileNames.contains("vha-nodes.shx"));
-		assertTrue(fileNames.contains("vha-nodes.cst"));
-		assertTrue(fileNames.contains("vha-nodes.fix"));
-		assertTrue(fileNames.contains("vha-nodes.shp"));
 
-		assertTrue(fileNames.contains("connections-edges.prj"));
-		assertTrue(fileNames.contains("connections-edges.dbf"));
-		assertTrue(fileNames.contains("connections-edges.shx"));
-		assertTrue(fileNames.contains("connections-edges.cst"));
-		assertTrue(fileNames.contains("connections-edges.fix"));
-		assertTrue(fileNames.contains("connections-edges.shp"));
-
-		assertTrue(fileNames.contains("connections-nodes.prj"));
-		assertTrue(fileNames.contains("connections-nodes.dbf"));
-		assertTrue(fileNames.contains("connections-nodes.shx"));
-		assertTrue(fileNames.contains("connections-nodes.cst"));
-		assertTrue(fileNames.contains("connections-nodes.fix"));
-		assertTrue(fileNames.contains("connections-nodes.shp"));
+		assertContainsAllShapefileExtensionFiles(fileNames, "riool-nodes");
+		assertContainsAllShapefileExtensionFiles(fileNames, "riool-edges");
+		assertContainsAllShapefileExtensionFiles(fileNames, "vha-nodes");
+		assertContainsAllShapefileExtensionFiles(fileNames, "vha-edges");
+		assertContainsAllShapefileExtensionFiles(fileNames, "connections-nodes");
+		assertContainsAllShapefileExtensionFiles(fileNames, "connections-edges");
 	}
 
 	@Test
-	public void testAggregated() throws JSONException, IOException {
+	public void testZipfile_metAreas() throws IOException {
+		HttpEntity<String> entity = new HttpEntity<String>(
+				IOUtils.toString(getClass().getResourceAsStream("request-areas.json"), "utf-8"),
+				headers);
 
+		ResponseEntity<byte[]> response =  restTemplate.exchange(
+				"http://localhost:" + port + "/trace-shape",
+				HttpMethod.POST, entity, byte[].class);
+
+		Set<String> fileNames = new HashSet<String>();
+		try (ZipInputStream zis = new ZipInputStream(
+				new ByteArrayInputStream(response.getBody()))) {
+			ZipEntry entry;
+			while ((entry = zis.getNextEntry()) != null) {
+				fileNames.add(entry.getName());
+			}
+		}
+
+		assertEquals(19, fileNames.size());
+		assertTrue(fileNames.contains("trace_info.txt"));
+
+		assertContainsAllShapefileExtensionFiles(fileNames, "vha-nodes");
+		assertContainsAllShapefileExtensionFiles(fileNames, "vha-edges");
+		assertContainsAllShapefileExtensionFiles(fileNames, "Risicogebieden-areas");
+	}
+
+	public void testAggregated() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-5.json");
 
 		JSONObject o = new JSONObject(response.getBody());
 		
 		System.out.println(o);
 
-		assertEquals(381, o.getJSONObject("graph")
+		assertEquals(32, o.getJSONObject("graph")
 				.getJSONArray("edges")
 				.getJSONObject(0).getInt("ie_agg"));
 	}
 
-	@Test
 	public void testEmptyResult() throws JSONException, IOException {
-
 		ResponseEntity<String> response = trace("request-empty.json");
 
 		JSONObject o = new JSONObject(response.getBody());
@@ -315,10 +291,8 @@ public class TraceControllerTest {
 		assertEquals(0, o.getJSONObject("graph")
 				.getJSONArray("vertices").length());
 	}
-	
-	@Test
+
 	public void testLimitRequest() throws JSONException, IOException {
-		
 		ResponseEntity<String> response = trace("request-limit.json");
 				
 		JSONObject o = new JSONObject(response.getBody());		
@@ -327,14 +301,46 @@ public class TraceControllerTest {
 		assertEquals("The maximum size of the search query was reached. The returned result might be incomplete.", 
 				o.getJSONArray("warnings").get(0));
 	}
-	
-	@Test
+
 	public void testOverlaptypes() throws IOException, JSONException {
 		String response =  restTemplate.getForObject(
-				"http://localhost:" + port + "/overlapTypes", 
+				"http://localhost:" + port + "/overlapTypes",
 				String.class);
 		JSONArray a = new JSONArray(response);
 		System.out.println(a);
+		assertEquals(2, a.length());
+		JSONObject area1 = a.getJSONObject(0);
+		assertEquals("Risicogebieden", area1.getString("name"));
+		assertTrue(area1.isNull("wmsLayerUrl"));
+		assertTrue(area1.isNull("wmsLayerName"));
+		assertTrue(area1.isNull("wmsStyleNaam"));
+		assertTrue(area1.isNull("detailName"));
+		assertTrue(area1.isNull("propertyForDetail"));
+		assertTrue(area1.isNull("propertyForFilter"));
+		JSONObject area2 = a.getJSONObject(1);
+		assertEquals("Risicogebieden2", area2.getString("name"));
+		assertEquals("wmsLayerUrlTest", area2.getString("wmsLayerUrl"));
+		assertEquals("wmsLayerNameTest", area2.getString("wmsLayerName"));
+		assertEquals("wmsStyleNaamTest", area2.getString("wmsStyleNaam"));
+		assertEquals("detailNameTest", area2.getString("detailName"));
+		assertEquals("propertyForDetailTest", area2.getString("propertyForDetail"));
+		assertEquals("propertyForFilterTest", area2.getString("propertyForFilter"));
+	}
+
+	// ----------------------------------------------------
+
+    private void assertContainsAllShapefileExtensionFiles(Set<String> fileNames, String fileNamePrefix) {
+        SHAPEFILE_EXTENSIONS.forEach(extension -> assertTrue(fileNames.contains(String.format("%s.%s", fileNamePrefix, extension))));
+    }
+
+	private void waitUntilGraphInitialized() {
+		try {
+			while (GraphStatus.Status.UNINITIALIZED == graphTracingEngine.getStatus().getStatus()) {
+				sleep(250L);
+			}
+		} catch (InterruptedException e) {
+			// intentionally left blank
+		}
 	}
 
 }

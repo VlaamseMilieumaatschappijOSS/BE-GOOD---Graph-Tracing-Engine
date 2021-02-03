@@ -1,11 +1,3 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
 package com.geosparc.gte.rest;
 
 import com.geosparc.graph.base.Idp;
@@ -31,26 +23,14 @@ import org.json.simple.JSONStreamAware;
 import org.opengis.feature.simple.SimpleFeature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -98,12 +78,24 @@ public class TraceController {
         response.sendError(500, exception.getMessage());
     }
 
+	@ExceptionHandler({IllegalStateException.class})
+	public void illegalstateException(
+			Exception exception,
+			HttpServletRequest request,
+			HttpServletResponse response)
+			throws IOException {
+		LOGGER.log(Level.SEVERE, exception.getMessage(), exception);
+		response.sendError(503, exception.getMessage());
+	}
+
 	@SuppressWarnings("unchecked")
 	@ApiOperation("Perform a trace and retrieve the result in json.")
-	@PostMapping(value = "/trace", produces = "application/json")
+	@PostMapping(value = "/trace", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public void trace(@RequestBody TraceRequest request,
 			HttpServletResponse response,
 			Locale locale) throws CQLException, ExportException, IOException {
+
+		LOGGER.fine("Start Trace -> start ID/Netwerk: " + request.getStartId() + " / " + request.getStartNetwork());
 
 		GraphTracingResult result = getGraphTracingResult(request);
 
@@ -162,7 +154,7 @@ public class TraceController {
 
 		jsonResult.put("warnings", getWarnings(result, locale));
 
-		response.setContentType("application/json");
+		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
 		jsonResult.writeJSONString(response.getWriter());
 	}
 
@@ -180,6 +172,8 @@ public class TraceController {
 	public void traceAsZip(@RequestBody TraceRequest request,
 			HttpServletResponse response, Locale locale)
 					throws CQLException, ExportException, IOException {
+
+		LOGGER.info("Start Trace (zip) -> start ID/Netwerk: " + request.getStartId() + " / " + request.getStartNetwork());
 
 		GraphTracingResult result = getGraphTracingResult(request);
 
@@ -207,6 +201,13 @@ public class TraceController {
 						writer.write(network.getName() + " ");
 					}
 					writer.write("\r\n");
+					if (request.getOverlappingTypes() != null) {
+						writer.write("Overlappende gebieden: ");
+						for (String overlapType : request.getOverlappingTypes()) {
+							writer.write(overlapType + " ");
+						}
+						writer.write("\r\n");
+					}
 					for (TraceRequestNetwork network : request.getNetworks()) {
 						if (network.getMaxDistance() != null) {
 							writer.write(network.getName() + " MaxDistance: " + network.getMaxDistance() + "\r\n");
@@ -224,11 +225,28 @@ public class TraceController {
 				}
 
 			}
-		}.exportGraph(result.getGraph(),
-				response.getOutputStream());
+		}.exportGraph(result, response.getOutputStream());
+	}
+	
+	@ApiOperation("Get info of overlapTypes.")
+	@GetMapping(value = "/overlapTypes", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public void overlapTypes(HttpServletResponse response) throws IOException {
+		JSONArray overlapAreaTypes = new JSONArray();
+		for (AreasConfig config : config.getAreas()) {
+			JSONObject overlapAreaInfo = new JSONObject();
+			overlapAreaInfo.put("name", config.getName());
+			overlapAreaInfo.put("wmsLayerUrl", config.getWmsLayerUrl());
+			overlapAreaInfo.put("wmsLayerName", config.getWmsLayerName());
+			overlapAreaInfo.put("wmsStyleNaam", config.getWmsStyleNaam());
+			overlapAreaInfo.put("detailName", config.getDetailName());
+			overlapAreaInfo.put("propertyForDetail", config.getPropertyForDetail());
+			overlapAreaInfo.put("propertyForFilter", config.getPropertyForFilter());
+			overlapAreaTypes.add(overlapAreaInfo);
+		}
+		overlapAreaTypes.writeJSONString(response.getWriter());
 	}
 
-	private GraphTracingResult getGraphTracingResult(@RequestBody TraceRequest request) throws CQLException {
+	private GraphTracingResult getGraphTracingResult(TraceRequest request) throws CQLException {
 		if (request.getStartNetwork() == null) {
 			throw new IllegalArgumentException("missing_start_network");
 		}
@@ -240,7 +258,7 @@ public class TraceController {
 		if (request.getNetworks() == null) {
 			throw new IllegalArgumentException("missing_networks");
 		}
-		
+
 		if (request.getOverlappingTypes() != null) {
 			for (String type : request.getOverlappingTypes()) {
 				 if (config.findAreasByName(type) == null) {
@@ -260,17 +278,8 @@ public class TraceController {
 				request.isUpstream(),
 				request.isIncludeOverlappingAreas(),
 				request.getOverlappingTypes(),
-				request.getLimit());
-	}
-	
-	@ApiOperation("Perform a trace and retrieve the result in json.")
-	@GetMapping(value = "/overlapTypes", produces = "application/json")
-	public List<String> overlapAreaTypes() {
-		List<String> list = new ArrayList<>();
-		for (AreasConfig config : config.getAreas()) {
-			list.add(config.getName());
-		}
-		return list;		
+				request.getLimit(),
+				request.isIgnorePaths());
 	}
 
 

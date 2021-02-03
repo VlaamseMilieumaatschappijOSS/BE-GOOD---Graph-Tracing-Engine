@@ -1,23 +1,8 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.graph.geo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Predicate;
-
+import com.geosparc.graph.alg.Tracing;
+import com.geosparc.graph.base.DGraph;
+import com.geosparc.graph.base.Idp;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.EdgeReversedGraph;
@@ -25,38 +10,40 @@ import org.jgrapht.graph.MaskSubgraph;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.filter.Filter;
 
-import com.geosparc.graph.alg.Tracing;
-import com.geosparc.graph.base.DGraph;
-import com.geosparc.graph.base.Idp;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Predicate;
 
 /**
  * Helper class for tracing.
- * 
+ *
  * @author Niels Charlier
  *
  */
 public class FeatureGraphTracer {
-	
+
 	private DGraph<GlobalId, SimpleFeature, SimpleFeature> graph;
-	
+
 	private Set<String> networks = new HashSet<>();
-	
+
 	private Map<String, Double> maxDistances = new HashMap<>();
-	
+
 	private Double maxDistance;
-	
+
 	private Map<String, Filter> vertexFilters = new HashMap<>();
-	
+
 	private Map<String, Filter> edgeFilters = new HashMap<>();
-	
+
 	private GlobalId source;
-	
+
 	private boolean upstream;
-	
+
 	private long limit;
-	
+
 	private boolean limitReached;
-		
+
+	private boolean ignorePaths;
+
 	private final Predicate<Idp<GlobalId, SimpleFeature>> edgePredicate =
 			e -> {
 				if (!networks.contains(e.getId().getNetwork())) {
@@ -69,7 +56,7 @@ public class FeatureGraphTracer {
 				Filter filter = edgeFilters.get(e.getId().getNetwork());
 				return filter != null && !filter.evaluate(e.getData());
 			};
-			
+
 	private final Predicate<Idp<GlobalId, SimpleFeature>> vertexPredicate =
 			v -> {
 				if (!networks.contains(v.getId().getNetwork())) {
@@ -82,8 +69,8 @@ public class FeatureGraphTracer {
 				Filter filter = vertexFilters.get(v.getId().getNetwork());
 				return filter != null && !filter.evaluate(v.getData());
 			};
-			
-	private final Predicate<GraphPath<Idp<GlobalId, SimpleFeature>, 
+
+	private final Predicate<GraphPath<Idp<GlobalId, SimpleFeature>,
 		Idp<GlobalId, SimpleFeature>>> weightPredicate =
 			p -> {
 				if (maxDistance != null && p.getWeight() > maxDistance) {
@@ -98,32 +85,33 @@ public class FeatureGraphTracer {
 			};
 
 	private Map<Idp<GlobalId, SimpleFeature>, Double> distances;
-	
+
 	public FeatureGraphTracer(DGraph<GlobalId, SimpleFeature, SimpleFeature> graph,
 			GlobalId source, boolean upstream) {
-		this(graph, source, upstream, null);
+		this(graph, source, upstream, null, false);
 	}
-					
+
 	public FeatureGraphTracer(DGraph<GlobalId, SimpleFeature, SimpleFeature> graph,
-			GlobalId source, boolean upstream, Long limit) {
+			GlobalId source, boolean upstream, Long limit, boolean ignorePaths) {
 		this.graph = graph;
 		this.source = source;
 		this.upstream = upstream;
 		this.limit = limit == null ? Long.MAX_VALUE : limit;
+		this.ignorePaths = ignorePaths;
 	}
-	
+
 	public void addNetwork(String network) {
 		networks.add(network);
 	}
-	
+
 	public void setMaximumDistance(String network, double distance) {
 		maxDistances.put(network, distance);
 	}
-	
+
 	public void setMaximumDistance(double distance) {
 		maxDistance = distance;
 	}
-	
+
 	public void setEdgeFilter(String network, Filter edgeFilter) {
 		edgeFilters.put(network, edgeFilter);
 	}
@@ -131,51 +119,64 @@ public class FeatureGraphTracer {
 	public void setVertexFilter(String network, Filter edgeFilter) {
 		vertexFilters.put(network, edgeFilter);
 	}
-	
-	public Graph<Idp<GlobalId, SimpleFeature>, 
+
+	public Graph<Idp<GlobalId, SimpleFeature>,
 		Idp<GlobalId, SimpleFeature>> trace() {
-		
-		Graph<Idp<GlobalId, SimpleFeature>, 
-			Idp<GlobalId, SimpleFeature>> workingGraph = graph;
-		
+
+		Graph<Idp<GlobalId, SimpleFeature>,
+			Idp<GlobalId, SimpleFeature>> baseGraph = graph;
+
 		if (upstream) {
-			workingGraph = new EdgeReversedGraph<>(workingGraph);
+			baseGraph = new EdgeReversedGraph<>(baseGraph);
 		}
-		
-		workingGraph = new MaskSubgraph<Idp<GlobalId, SimpleFeature>, 
-				Idp<GlobalId, SimpleFeature>>(
-				workingGraph, 
+
+		Graph<Idp<GlobalId, SimpleFeature>,
+				Idp<GlobalId, SimpleFeature>> workingGraph = new MaskSubgraph<>(
+				baseGraph,
 				vertexPredicate,
 				edgePredicate);
 
-		Tracing<Idp<GlobalId, SimpleFeature>, 
-			Idp<GlobalId, SimpleFeature>> tracing = 
+		Tracing<Idp<GlobalId, SimpleFeature>,
+			Idp<GlobalId, SimpleFeature>> tracing =
 				new Tracing<>(workingGraph);
-		
-		Idp<GlobalId, SimpleFeature> sourceVertex = 
-				getSourceVertex(workingGraph);
-		Idp<GlobalId, SimpleFeature> sourceEdge = 
-				getSourceEdge(workingGraph);
-		
-		List<GraphPath<Idp<GlobalId, SimpleFeature>, 
+
+		Idp<GlobalId, SimpleFeature> sourceVertex =
+				getSourceVertex(baseGraph);
+		Idp<GlobalId, SimpleFeature> sourceEdge =
+				getSourceEdge();
+
+		// Check if starting vertex and edge still exist and have not been filtered out
+		if ((sourceEdge != null && !workingGraph.containsEdge(sourceEdge))
+				|| (sourceVertex != null && !workingGraph.containsVertex(sourceVertex))) {
+			return tracing.asGraph(Collections.emptyList());
+		}
+
+        //We can ignore all paths when maximum distance is not set (no weight predicate).
+        if (maxDistance == null && maxDistances.isEmpty()) {
+            ignorePaths = true;
+        }
+
+		List<GraphPath<Idp<GlobalId, SimpleFeature>,
 			Idp<GlobalId, SimpleFeature>>> paths
 				= tracing.getAllPaths(
-						sourceVertex, 
+						sourceVertex,
 						sourceEdge,
-						true, 
+						true,
 						weightPredicate,
-						limit);
-		distances = tracing.getMimimumWeights(paths);
-		
+						limit, ignorePaths);
+
+		Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> graph = tracing.asGraph(paths);
+		distances = tracing.getMimimumWeights(graph, sourceVertex, sourceEdge);
+
 		limitReached = tracing.isLimitReached();
-		
+
 		return tracing.asGraph(paths);
 	}
-	
+
 	public boolean isLimitReached() {
 		return limitReached;
 	}
-	
+
 	public Double getDistance(GlobalId leaf) {
 		return distances.get(graph.getVertexById(leaf));
 	}
@@ -184,7 +185,7 @@ public class FeatureGraphTracer {
 		return distances.get(leaf);
 	}
 
-	private Double getNetworkWeight(GraphPath<Idp<GlobalId, SimpleFeature>, 
+	private Double getNetworkWeight(GraphPath<Idp<GlobalId, SimpleFeature>,
 			Idp<GlobalId, SimpleFeature>> p,
 			String network) {
 		double result = 0;
@@ -195,84 +196,79 @@ public class FeatureGraphTracer {
 		}
 		return result;
 	}
-	
-	protected Idp<GlobalId, SimpleFeature> getSourceVertex(Graph<Idp<GlobalId, SimpleFeature>, 
-			Idp<GlobalId, SimpleFeature>> workingGraph) {
-		Idp<GlobalId, SimpleFeature> sourceVertex = 
-				graph.getVertexById(source);
-		
+
+	protected Idp<GlobalId, SimpleFeature> getSourceVertex(Graph<Idp<GlobalId, SimpleFeature>,
+			Idp<GlobalId, SimpleFeature>> baseGraph) {
+		Idp<GlobalId, SimpleFeature> sourceVertex = graph.getVertexById(source);
+
 		if (sourceVertex == null) {
 			//try edge
-			Idp<GlobalId, SimpleFeature> sourceEdge = 
-					graph.getEdgeById(source);
+			Idp<GlobalId, SimpleFeature> sourceEdge = graph.getEdgeById(source);
 			if (sourceEdge == null) {
 				throw new IllegalArgumentException("start_node_or_edge_not_found");
 			} else {
-				sourceVertex = workingGraph.getEdgeSource(sourceEdge);
+				sourceVertex = baseGraph.getEdgeSource(sourceEdge);
 			}
 		}
-		
+
 		return sourceVertex;
 	}
-	
-	protected Idp<GlobalId, SimpleFeature> getSourceEdge(Graph<Idp<GlobalId, SimpleFeature>, 
-			Idp<GlobalId, SimpleFeature>> workingGraph) {
-		Idp<GlobalId, SimpleFeature> sourceVertex = 
-				graph.getVertexById(source);
-		
+
+	protected Idp<GlobalId, SimpleFeature> getSourceEdge() {
+		Idp<GlobalId, SimpleFeature> sourceVertex = graph.getVertexById(source);
+
 		if (sourceVertex == null) {
 			//try edge
-			Idp<GlobalId, SimpleFeature> sourceEdge = 
-					graph.getEdgeById(source);
+			Idp<GlobalId, SimpleFeature> sourceEdge = graph.getEdgeById(source);
 			return sourceEdge;
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Orders the vertices of a trace
-	 * 
+	 *
 	 * @param trace trace result
 	 * @return ordered vertices
 	 */
-	public List<Idp<GlobalId, SimpleFeature>> orderVertices(Graph<Idp<GlobalId, SimpleFeature>, 
-			Idp<GlobalId, SimpleFeature>> trace) {		
-		List<Idp<GlobalId, SimpleFeature>> result 
-			= new ArrayList<>();		
+	public List<Idp<GlobalId, SimpleFeature>> orderVertices(Graph<Idp<GlobalId, SimpleFeature>,
+			Idp<GlobalId, SimpleFeature>> trace) {
+		List<Idp<GlobalId, SimpleFeature>> result
+			= new ArrayList<>();
 		if (trace.vertexSet().size() > 0) {
-			Idp<GlobalId, SimpleFeature> sourceVertex = 
+			Idp<GlobalId, SimpleFeature> sourceVertex =
 				getSourceVertex(trace);
-			addNodeAndChildrenIfNotYetInThere(trace, result, sourceVertex);		
+			addNodeAndChildrenIfNotYetInThere(trace, result, sourceVertex);
 		}
 		assert result.size() == trace.vertexSet().size();
 		return result;
 	}
-	
-	private void addNodeAndChildrenIfNotYetInThere(Graph<Idp<GlobalId, SimpleFeature>, 
-				Idp<GlobalId, SimpleFeature>> trace, 
-				List<Idp<GlobalId, SimpleFeature>> result, 
-				Idp<GlobalId, SimpleFeature> node) {		
+
+	private void addNodeAndChildrenIfNotYetInThere(Graph<Idp<GlobalId, SimpleFeature>,
+				Idp<GlobalId, SimpleFeature>> trace,
+				List<Idp<GlobalId, SimpleFeature>> result,
+				Idp<GlobalId, SimpleFeature> node) {
 		if (!result.contains(node)) {
-			result.add(node);			
+			result.add(node);
 			for (Idp<GlobalId, SimpleFeature> edge : trace.outgoingEdgesOf(node)) {
 				addNodeAndChildrenIfNotYetInThere(trace, result, trace.getEdgeTarget(edge));
 			}
 		}
 	}
-	
+
 	/**
 	 * Orders the edges of a trace
-	 * 
+	 *
 	 * @param trace trace result
 	 * @return ordered edges
 	 */
-	public List<Idp<GlobalId, SimpleFeature>> orderEdges(Graph<Idp<GlobalId, SimpleFeature>, 
-			Idp<GlobalId, SimpleFeature>> trace) {		
-		List<Idp<GlobalId, SimpleFeature>> result 
+	public List<Idp<GlobalId, SimpleFeature>> orderEdges(Graph<Idp<GlobalId, SimpleFeature>,
+			Idp<GlobalId, SimpleFeature>> trace) {
+		List<Idp<GlobalId, SimpleFeature>> result
 			= new ArrayList<>();
 		if (trace.edgeSet().size() > 0) {
-			Idp<GlobalId, SimpleFeature> sourceVertex = 
+			Idp<GlobalId, SimpleFeature> sourceVertex =
 					getSourceVertex(trace);
 			for (Idp<GlobalId, SimpleFeature> edge : trace.outgoingEdgesOf(sourceVertex)) {
 				addEdgeAndChildrenIfNotYetInThere(trace, result, edge);
@@ -281,19 +277,18 @@ public class FeatureGraphTracer {
 		assert result.size() == trace.edgeSet().size();
 		return result;
 	}
-	
-	private void addEdgeAndChildrenIfNotYetInThere(Graph<Idp<GlobalId, SimpleFeature>, 
-				Idp<GlobalId, SimpleFeature>> trace, 
-				List<Idp<GlobalId, SimpleFeature>> result, 
-				Idp<GlobalId, SimpleFeature> edge) {		
+
+	private void addEdgeAndChildrenIfNotYetInThere(Graph<Idp<GlobalId, SimpleFeature>,
+				Idp<GlobalId, SimpleFeature>> trace,
+				List<Idp<GlobalId, SimpleFeature>> result,
+				Idp<GlobalId, SimpleFeature> edge) {
 		if (!result.contains(edge)) {
-			result.add(edge);			
+			result.add(edge);
 			for (Idp<GlobalId, SimpleFeature> child : trace.outgoingEdgesOf(
 					trace.getEdgeTarget(edge))) {
 				addEdgeAndChildrenIfNotYetInThere(trace, result, child);
 			}
 		}
 	}
-	
 
 }

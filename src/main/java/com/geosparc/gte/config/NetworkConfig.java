@@ -1,12 +1,3 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.gte.config;
 
 import java.net.URL;
@@ -87,7 +78,7 @@ public class NetworkConfig {
 	}
 
 	public Map<String, String> getNodeDataStore() {
-		return nodeDataStore;
+		return parseDataStore(nodeDataStore);
 	}
 
 	public void setNodeDataStore(Map<String, String> nodeDataStore) {
@@ -143,13 +134,23 @@ public class NetworkConfig {
 	}
 
 	private Map<String, String> parseClassPathFromDataStore(Map<String, String> dataStore) {
-		if (dataStore.containsKey("url") && dataStore.get("url").contains("classpath:")) {
-			String url = dataStore.get("url");
-			String fileName = url.split("classpath:", 2)[1];
-			URL file = getClass().getClassLoader().getResource(fileName);
-			dataStore.put("url", url.replace("classpath:"+fileName, file.getPath()));
+		if (dataStore != null) {
+			if (dataStore.containsKey("url") && dataStore.get("url").contains("classpath:")) {
+				String url = dataStore.get("url");
+				String fileName = url.split("classpath:", 2)[1];
+				URL file = getClass().getClassLoader().getResource(fileName);
+				dataStore.put("url", url.replace("classpath:" + fileName, file.getPath()));
+			}
+			parseDataStore(dataStore);
 		}
-		dataStore.put("Expose primary keys", "true");
+		return dataStore;
+	}
+
+	private Map<String, String> parseDataStore(Map<String, String> dataStore) {
+		if (dataStore != null && !dataStore.isEmpty()) { // empty means "use edgedatastore", so don't add a key.
+			// -- add default Geotools DataStore Parameters
+			dataStore.putIfAbsent("Expose primary keys", "true");
+		}
 		return dataStore;
 	}
 	

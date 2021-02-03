@@ -1,24 +1,19 @@
-/*
- * Graph Tracing Engine
- * 
- * (c) Copyright 2019 Vlaamse Milieumaatschappij (VMM)
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
- * You may obtain may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
- * 
- */
-
 package com.geosparc.gte.engine;
-
-import java.util.List;
-
-import org.geotools.filter.text.cql2.CQLException;
-import org.opengis.feature.simple.SimpleFeature;
 
 import com.geosparc.graph.base.DGraph;
 import com.geosparc.graph.geo.GlobalId;
+import org.geotools.filter.text.cql2.CQLException;
+import org.opengis.feature.simple.SimpleFeature;
+
+import java.util.List;
 
 public interface GraphTracingEngine {
-	
+
+	/**
+	 * Start the engine, initialize the graph.
+	 */
+	void start();
+
 	/**
 	 * Get the entire graph
 	 */
@@ -37,17 +32,34 @@ public interface GraphTracingEngine {
 	 * @param upstream true if upstream, false if downstream
 	 * @param includeOverlappingAreas calculate overlapping areas
 	 * @param limit the max amount of edges per single path
+	 * @param ignorePaths If true, do not calculate all possible paths, but stop when an already visited vertex is met.
+	 *      This means that predicates and limits will not be calculated correctly.
 	 * @return the tracing result
 	 * @throws CQLException malformed filter
 	 */
 	GraphTracingResult trace(GlobalId startNode, Double maxDistance, 
 			List<String> networks, List<String> nodeFilters, List<String> edgeFilters,
 			List<Double> maxDistances, List<List<String>> edgeAggregatedAtts, boolean upstream,
-			boolean includeOverlappingAreas, List<String> overlapTypes, Long limit) throws CQLException;
+			boolean includeOverlappingAreas, List<String> overlapTypes, Long limit, boolean ignorePaths) throws CQLException;
 
 	/**
 	 * Return a list of all networks.
 	 */
 	List<String> getNetworks();
+
+	/**
+	 * Return the status of the graph.
+	 */
+	GraphStatus getStatus();
+
+	/**
+	 * Reload the entire graph.
+	 */
+	void reload();
+
+	/**
+	 * Check if the graph is updating.
+	 */
+	boolean isUpdating();
 
 }
