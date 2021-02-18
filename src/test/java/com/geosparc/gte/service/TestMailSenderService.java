@@ -1,7 +1,6 @@
 package com.geosparc.gte.service;
 
 import org.geotools.util.logging.Logging;
-import org.springframework.stereotype.Service;
 
 import java.util.logging.Logger;
 

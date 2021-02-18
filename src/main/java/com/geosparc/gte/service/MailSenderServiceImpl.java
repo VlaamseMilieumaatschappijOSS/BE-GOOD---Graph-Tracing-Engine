@@ -1,14 +1,18 @@
 package com.geosparc.gte.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.geotools.util.logging.Logging;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -23,33 +27,42 @@ public class MailSenderServiceImpl implements MailSenderService {
     @Autowired
     private JavaMailSender mailSender;
 
-    @Value("${mailservice.systemevents.to}")
+    @Value("${mailservice.systemevents.to:me@localhost}")
     private String[] systemeventMailReceivers;
 
-    @Value("${spring.mail.from}")
+    @Value("${mailservice.systemevents.locale:nl}")
+    private String systemLocaleString;
+
+    @Value("${spring.mail.from:me@localhost}")
     private String from;
+
+    private Locale systemLocale;
+
+    @Autowired
+    private MessageSource messageSource;
+
+    @PostConstruct
+    private void init() {
+        if (!StringUtils.isEmpty(systemLocaleString)) {
+            systemLocale = Locale.forLanguageTag(systemLocaleString);
+        }
+        if (systemLocale == null) {
+            systemLocale = Locale.getDefault();
+        }
+        LOGGER.info("Locale for mail set to: " + systemLocale.toString());
+    }
 
     @Override
     public void sendSystemMailLoadFail(Throwable ex) {
         if (systemeventMailReceivers == null || systemeventMailReceivers.length == 0) {
-            LOGGER.info("Kan geen mail verzenden: geen 'to:' email-adressen opgegeven (parameter: mailservice.systemevents.to)");
+            LOGGER.info("Cannot send mail: no 'to:' email-addresses provided (parameter: mailservice.systemevents.to)");
             return;
         }
 
         try {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Hallo,\n\n");
-            sb.append("Er is een fout opgetreden bij het herladen van de datasets. \n\n");
-            sb.append("Dit is een geautomatiseerd bericht.\nMet vriendelijke groeten.\nTracing Server.\n\n\n");
-            sb.append("Stacktrace:\n===========\n");
-            sb.append(ExceptionUtils.getStackTrace(ex));
-
-            StringBuilder sub = new StringBuilder();
-            sub.append("[FAILED] Tracingserver [");
-            sub.append(InetAddress.getLocalHost().getHostName());
-            sub.append("] Herladen datasets.");
-
-            sendSystemMail(sub.toString(), sb.toString(), systemeventMailReceivers);
+            final String subject = messageSource.getMessage("mail_load_fail_subject", new Object[] {InetAddress.getLocalHost().getHostName()}, systemLocale);
+            final String body = messageSource.getMessage("mail_load_fail_body", new Object[] {ExceptionUtils.getStackTrace(ex)}, systemLocale);
+            sendSystemMail(subject, body, systemeventMailReceivers);
         } catch (Exception e) {
             LOGGER.warning("Failed sending mail!\n" + ExceptionUtils.getStackTrace(e));
         }
@@ -58,22 +71,14 @@ public class MailSenderServiceImpl implements MailSenderService {
     @Override
     public void sendSystemMailLoadSuccess() {
         if (systemeventMailReceivers == null || systemeventMailReceivers.length == 0) {
-            LOGGER.info("Kan geen mail verzenden: geen 'to:' email-adressen opgegeven (parameter: mailservice.systemevents.to)");
+            LOGGER.info("Cannot send mail: no 'to:' email-addresses provided (parameter: mailservice.systemevents.to)");
             return;
         }
 
         try {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Hallo,\n\n");
-            sb.append("Datasets zijn correct geladen.\n\n");
-            sb.append("Dit is een geautomatiseerd bericht.\nMet vriendelijke groeten.\nTracing Server.\n\n\n");
-
-            StringBuilder sub = new StringBuilder();
-            sub.append("[SUCCESS] Tracingserver [");
-            sub.append(InetAddress.getLocalHost().getHostName());
-            sub.append("] Herladen datasets.");
-
-            sendSystemMail(sub.toString(), sb.toString(), systemeventMailReceivers);
+            final String subject = messageSource.getMessage("mail_load_success_subject", new Object[] {InetAddress.getLocalHost().getHostName()}, systemLocale);
+            final String body = messageSource.getMessage("mail_load_success_body", new Object[] {}, systemLocale);
+            sendSystemMail(subject, body, systemeventMailReceivers);
         } catch (Exception ex) {
             LOGGER.warning("Failed sending mail!\n" + ExceptionUtils.getStackTrace(ex));
         }

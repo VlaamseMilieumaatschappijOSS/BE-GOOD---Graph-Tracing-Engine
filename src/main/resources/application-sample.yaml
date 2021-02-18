@@ -134,3 +134,20 @@ areas:
 frequency: 0 0 0 * * ?
 
 
+
+### Configure following properties to enable sending mail when (re-)loading fails.
+
+mailservice:
+  systemevents.locale: en
+#  systemevents.to: me@localhost
+#
+#spring:
+#  mail:
+#    host: mail.localhost.be
+#    port: 25
+#    from: tracing@localhost.be
+#    username: me
+#    password: ***
+#    properties.mail.smtp.auth: false
+#    testConnection: false
+
