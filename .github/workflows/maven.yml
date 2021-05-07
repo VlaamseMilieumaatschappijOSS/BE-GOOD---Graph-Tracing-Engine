@@ -21,3 +21,8 @@ jobs:
         distribution: 'adopt'
     - name: Build with Maven
       run: mvn -B package -DskipTests
+    - uses: actions/upload-artifact@v2
+      with: 
+        name: vmm-gte.war
+        path: target/vmm-gte-*.war
+        if-no-files-found: error
