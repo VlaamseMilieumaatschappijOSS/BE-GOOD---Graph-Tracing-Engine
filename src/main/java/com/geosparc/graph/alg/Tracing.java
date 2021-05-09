@@ -9,15 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
-
-import org.geotools.util.logging.Logging;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.GraphTests;
 import org.jgrapht.graph.DirectedMultigraph;
 import org.jgrapht.graph.GraphWalk;
-import org.jgrapht.traverse.BreadthFirstIterator;
 import org.jgrapht.traverse.ClosestFirstIterator;
 
 /**
@@ -29,8 +25,6 @@ import org.jgrapht.traverse.ClosestFirstIterator;
  * @param <E> edge class
  */
 public class Tracing<V, E> {
-
-	private static final Logger LOGGER = Logging.getLogger(Tracing.class);
 
 	private final Graph<V, E> graph;
     

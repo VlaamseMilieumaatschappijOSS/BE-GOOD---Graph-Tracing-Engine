@@ -2,7 +2,6 @@ package com.geosparc.gte.config;
 
 import com.geosparc.gte.config.ConnectionConfig.ConnectionType;
 import com.geosparc.gte.config.NetworkConfig.NodeType;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;

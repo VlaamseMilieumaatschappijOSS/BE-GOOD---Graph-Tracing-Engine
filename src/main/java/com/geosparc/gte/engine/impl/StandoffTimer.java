@@ -61,7 +61,7 @@ public class StandoffTimer {
             LOGGER.info("Waiting for: " + (waitTime / 1000) + " seconds...");
             cancelled = false;
             waitingThread = Thread.currentThread();
-            waitingThread.sleep(waitTime);
+            Thread.sleep(waitTime);
 
             // -- update waittime only on succesful wait
             waitTime = (long) (standoffMultiplier * waitTime);
