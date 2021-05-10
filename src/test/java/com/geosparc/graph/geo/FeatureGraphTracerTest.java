@@ -11,13 +11,14 @@ import org.junit.Test;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.filter.FilterFactory2;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
 public class FeatureGraphTracerTest {
 	
-
 	private FilterFactory2 fac = CommonFactoryFinder.getFilterFactory2();
 	
 	protected DGraph<GlobalId, SimpleFeature, SimpleFeature> createGraph() throws Exception {
@@ -116,8 +117,9 @@ public class FeatureGraphTracerTest {
 		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph
 			= createGraph();
 		
+		GlobalId source = new GlobalId("testL", "1");
 		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, 
-				new GlobalId("testL", "1"), false);
+				source, false);
 
 		tracer.addNetwork("testL");
 		tracer.addNetwork("testG");
@@ -131,9 +133,44 @@ public class FeatureGraphTracerTest {
 		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testL","13"))));
 		
 		assertEquals(4.242640687119285,
-				tracer.getDistance(new GlobalId("testL", "2")), 0.0001);
+				tracer.getDistance(source, new GlobalId("testL", "2")), 0.0001);
 		assertEquals(7.0710678118654755,
-				tracer.getDistance(new GlobalId("testL", "3")), 0.0001);
+				tracer.getDistance(source, new GlobalId("testL", "3")), 0.0001);
+	}
+	
+	@Test
+	public void testFeatureGraphTracerTwoStartNodes() throws Exception {
+		DGraph<GlobalId, SimpleFeature, SimpleFeature> graph
+			= createGraph();
+		
+		List<GlobalId> startNodes = new ArrayList<>();
+		GlobalId source1 = new GlobalId("testL", "1");
+		GlobalId source2 = new GlobalId("testL", "2");
+		startNodes.add(source1);
+		startNodes.add(source2);
+		FeatureGraphTracer tracer = new FeatureGraphTracer(graph, 
+				startNodes, false);
+		
+		tracer.addNetwork("testL");
+		tracer.addNetwork("testG");
+			
+		Graph<Idp<GlobalId, SimpleFeature>, 
+			Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
+				
+		assertEquals(5, trace.edgeSet().size());
+		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testL","23"))));
+		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testG","testL.3-c", Type.GENERATED))));
+		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testG","testL.3-c+", Type.GENERATED))));
+		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testL","12"))));
+		assertTrue(trace.containsEdge(graph.getEdgeById(new GlobalId("testL","13"))));
+
+		assertEquals(4.242640687119285,
+				tracer.getDistance(source1, new GlobalId("testL", "2")), 0.0001);
+		assertEquals(7.0710678118654755,
+				tracer.getDistance(source1, new GlobalId("testL", "3")), 0.0001);
+		
+		assertEquals(2.8284271247461903,
+				tracer.getDistance(source2, new GlobalId("testL", "3")), 0.0001);
 	}
 	
 	@Test

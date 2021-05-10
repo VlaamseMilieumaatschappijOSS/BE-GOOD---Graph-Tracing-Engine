@@ -34,7 +34,7 @@ public class FeatureGraphTracer {
 
 	private Map<String, Filter> edgeFilters = new HashMap<>();
 
-	private GlobalId source;
+	private List<GlobalId> sources;
 
 	private boolean upstream;
 
@@ -84,17 +84,22 @@ public class FeatureGraphTracer {
 				return true;
 			};
 
-	private Map<Idp<GlobalId, SimpleFeature>, Double> distances;
+	private Map<GlobalId, Map<Idp<GlobalId, SimpleFeature>, Double>> distances = new HashMap<>();
 
 	public FeatureGraphTracer(DGraph<GlobalId, SimpleFeature, SimpleFeature> graph,
 			GlobalId source, boolean upstream) {
-		this(graph, source, upstream, null, false);
+		this(graph, Collections.singletonList(source), upstream);
 	}
 
 	public FeatureGraphTracer(DGraph<GlobalId, SimpleFeature, SimpleFeature> graph,
-			GlobalId source, boolean upstream, Long limit, boolean ignorePaths) {
+			List<GlobalId> sources, boolean upstream) {
+		this(graph, sources, upstream, null, false);
+	}
+
+	public FeatureGraphTracer(DGraph<GlobalId, SimpleFeature, SimpleFeature> graph,
+			List<GlobalId> sources, boolean upstream, Long limit, boolean ignorePaths) {
 		this.graph = graph;
-		this.source = source;
+		this.sources = sources;
 		this.upstream = upstream;
 		this.limit = limit == null ? Long.MAX_VALUE : limit;
 		this.ignorePaths = ignorePaths;
@@ -140,35 +145,37 @@ public class FeatureGraphTracer {
 			Idp<GlobalId, SimpleFeature>> tracing =
 				new Tracing<>(workingGraph);
 
-		Idp<GlobalId, SimpleFeature> sourceVertex =
-				getSourceVertex(baseGraph);
-		Idp<GlobalId, SimpleFeature> sourceEdge =
-				getSourceEdge();
-
-		// Check if starting vertex and edge still exist and have not been filtered out
-		if ((sourceEdge != null && !workingGraph.containsEdge(sourceEdge))
-				|| (sourceVertex != null && !workingGraph.containsVertex(sourceVertex))) {
-			return tracing.asGraph(Collections.emptyList());
-		}
-
-        //We can ignore all paths when maximum distance is not set (no weight predicate).
-        if (maxDistance == null && maxDistances.isEmpty()) {
-            ignorePaths = true;
-        }
-
 		List<GraphPath<Idp<GlobalId, SimpleFeature>,
-			Idp<GlobalId, SimpleFeature>>> paths
-				= tracing.getAllPaths(
-						sourceVertex,
-						sourceEdge,
-						true,
-						weightPredicate,
-						limit, ignorePaths);
-
-		Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> graph = tracing.asGraph(paths);
-		distances = tracing.getMimimumWeights(graph, sourceVertex, sourceEdge);
-
-		limitReached = tracing.isLimitReached();
+			Idp<GlobalId, SimpleFeature>>> paths = new ArrayList<>();
+		for (GlobalId source : sources) {
+			Idp<GlobalId, SimpleFeature> sourceVertex =
+					getSourceVertex(source, baseGraph);
+			Idp<GlobalId, SimpleFeature> sourceEdge =
+					getSourceEdge(source);
+	
+			// Check if starting vertex and edge still exist and have not been filtered out
+			if ((sourceEdge != null && !workingGraph.containsEdge(sourceEdge))
+					|| (sourceVertex != null && !workingGraph.containsVertex(sourceVertex))) {
+				return tracing.asGraph(Collections.emptyList());
+			}
+	
+	        //We can ignore all paths when maximum distance is not set (no weight predicate).
+	        if (maxDistance == null && maxDistances.isEmpty()) {
+	            ignorePaths = true;
+	        }
+	
+			paths.addAll(tracing.getAllPaths(
+							sourceVertex,
+							sourceEdge,
+							true,
+							weightPredicate,
+							limit, ignorePaths));
+	
+			Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> graph = tracing.asGraph(paths);
+			distances.put(source, tracing.getMimimumWeights(graph, sourceVertex, sourceEdge));
+	
+			limitReached = limitReached || tracing.isLimitReached();
+		}
 
 		return tracing.asGraph(paths);
 	}
@@ -177,12 +184,12 @@ public class FeatureGraphTracer {
 		return limitReached;
 	}
 
-	public Double getDistance(GlobalId leaf) {
-		return distances.get(graph.getVertexById(leaf));
+	public Double getDistance(GlobalId source, GlobalId leaf) {
+		return distances.get(source).get(graph.getVertexById(leaf));
 	}
 
-	public Double getDistance(Idp<GlobalId, SimpleFeature> leaf) {
-		return distances.get(leaf);
+	public Double getDistance(GlobalId source, Idp<GlobalId, SimpleFeature> leaf) {
+		return distances.get(source).get(leaf);
 	}
 
 	private Double getNetworkWeight(GraphPath<Idp<GlobalId, SimpleFeature>,
@@ -197,7 +204,9 @@ public class FeatureGraphTracer {
 		return result;
 	}
 
-	protected Idp<GlobalId, SimpleFeature> getSourceVertex(Graph<Idp<GlobalId, SimpleFeature>,
+	protected Idp<GlobalId, SimpleFeature> getSourceVertex(
+			GlobalId source,
+			Graph<Idp<GlobalId, SimpleFeature>,
 			Idp<GlobalId, SimpleFeature>> baseGraph) {
 		Idp<GlobalId, SimpleFeature> sourceVertex = graph.getVertexById(source);
 
@@ -214,7 +223,7 @@ public class FeatureGraphTracer {
 		return sourceVertex;
 	}
 
-	protected Idp<GlobalId, SimpleFeature> getSourceEdge() {
+	protected Idp<GlobalId, SimpleFeature> getSourceEdge(GlobalId source) {
 		Idp<GlobalId, SimpleFeature> sourceVertex = graph.getVertexById(source);
 
 		if (sourceVertex == null) {
@@ -237,9 +246,11 @@ public class FeatureGraphTracer {
 		List<Idp<GlobalId, SimpleFeature>> result
 			= new ArrayList<>();
 		if (trace.vertexSet().size() > 0) {
-			Idp<GlobalId, SimpleFeature> sourceVertex =
-				getSourceVertex(trace);
-			addNodeAndChildrenIfNotYetInThere(trace, result, sourceVertex);
+			for (GlobalId source : sources) {
+				Idp<GlobalId, SimpleFeature> sourceVertex =
+					getSourceVertex(source, trace);
+				addNodeAndChildrenIfNotYetInThere(trace, result, sourceVertex);
+			}
 		}
 		assert result.size() == trace.vertexSet().size();
 		return result;
@@ -268,10 +279,12 @@ public class FeatureGraphTracer {
 		List<Idp<GlobalId, SimpleFeature>> result
 			= new ArrayList<>();
 		if (trace.edgeSet().size() > 0) {
-			Idp<GlobalId, SimpleFeature> sourceVertex =
-					getSourceVertex(trace);
-			for (Idp<GlobalId, SimpleFeature> edge : trace.outgoingEdgesOf(sourceVertex)) {
-				addEdgeAndChildrenIfNotYetInThere(trace, result, edge);
+			for (GlobalId source : sources) {
+				Idp<GlobalId, SimpleFeature> sourceVertex =
+						getSourceVertex(source, trace);
+				for (Idp<GlobalId, SimpleFeature> edge : trace.outgoingEdgesOf(sourceVertex)) {
+					addEdgeAndChildrenIfNotYetInThere(trace, result, edge);
+				}
 			}
 		}
 		assert result.size() == trace.edgeSet().size();

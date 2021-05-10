@@ -83,6 +83,7 @@ public class TraceControllerTest {
 		
 	}
 		
+	@Test
 	public void testBasicRequest() throws Exception {
 		ResponseEntity<String> response = trace("request-1.json");
 				
@@ -128,8 +129,30 @@ public class TraceControllerTest {
 		assertNotNull(ep.getString("zuiverings"));
 	}
 
+	@Test
+	public void testMultiStartRequest() throws Exception {
+		ResponseEntity<String> response = trace("request-multistart.json");
+				
+		JSONObject o = new JSONObject(response.getBody());
 
+		assertEquals(0, o.getJSONArray("warnings").length());
+		
+		JSONObject g = o.getJSONObject("graph");
+		JSONArray vs = g.getJSONArray("vertices");
+		assertEquals(22, vs.length());
+		JSONArray es = g.getJSONArray("edges");
+		assertEquals(22, es.length());
+		
+		assertEquals("riool:ZG018_291505",
+				vs.getJSONObject(0).getString("id"));
+		JSONObject v = vs.getJSONObject(1);
+		assertEquals("riool:ZG018_179130", v.getString("id"));
+		assertFalse(v.has("distance"));
+		JSONObject d = v.getJSONObject("distances");
+		assertEquals(69.98546, d.getDouble("riool:ZG018_291505"), 0.00001);
+	}
 
+	@Test
 	public void testFilteredRequest() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-2.json");
 
@@ -161,6 +184,7 @@ public class TraceControllerTest {
 
 	}
 
+	@Test
 	public void testRequestByEdge() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-4.json");
 
@@ -174,6 +198,7 @@ public class TraceControllerTest {
 
 	}
 	
+	@Test
 	public void testRequestWithAreas() throws JSONException, IOException {
 
 		ResponseEntity<String> response = trace("request-areas.json");
@@ -194,6 +219,7 @@ public class TraceControllerTest {
 		assertNotNull(fp.getString("Zone"));
 	}
 
+	@Test
 	public void testRequestWithAreas2() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-areas2.json");
 
@@ -212,7 +238,7 @@ public class TraceControllerTest {
 		assertNotNull(fp.getString("Zone"));
 	}
 
-
+	@Test
 	public void testZipfile() throws IOException {
 		HttpEntity<String> entity = new HttpEntity<String>(
 				IOUtils.toString(getClass().getResourceAsStream("request-6.json"), "utf-8"),
@@ -269,6 +295,7 @@ public class TraceControllerTest {
 		assertContainsAllShapefileExtensionFiles(fileNames, "Risicogebieden-areas");
 	}
 
+	@Test
 	public void testAggregated() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-5.json");
 
@@ -281,6 +308,7 @@ public class TraceControllerTest {
 				.getJSONObject(0).getInt("ie_agg"));
 	}
 
+	@Test
 	public void testEmptyResult() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-empty.json");
 
@@ -292,6 +320,7 @@ public class TraceControllerTest {
 				.getJSONArray("vertices").length());
 	}
 
+	@Test
 	public void testLimitRequest() throws JSONException, IOException {
 		ResponseEntity<String> response = trace("request-limit.json");
 				
@@ -302,6 +331,7 @@ public class TraceControllerTest {
 				o.getJSONArray("warnings").get(0));
 	}
 
+	@Test
 	public void testOverlaptypes() throws IOException, JSONException {
 		String response =  restTemplate.getForObject(
 				"http://localhost:" + port + "/overlapTypes",

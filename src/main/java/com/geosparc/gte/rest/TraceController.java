@@ -10,6 +10,9 @@ import com.geosparc.gte.config.GteConfig;
 import com.geosparc.gte.engine.GraphTracingEngine;
 import com.geosparc.gte.engine.GraphTracingResult;
 import com.geosparc.gte.rest.TraceRequest.TraceRequestNetwork;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.geotools.filter.text.cql2.CQLException;
@@ -96,6 +99,9 @@ public class TraceController {
 			Locale locale) throws CQLException, ExportException, IOException {
 
 		LOGGER.fine("Start Trace -> start ID/Netwerk: " + request.getStartId() + " / " + request.getStartNetwork());
+		
+		//backwards compatibility mode (single distance)
+		final boolean BC_MODE = request.getStartNodes() == null;
 
 		GraphTracingResult result = getGraphTracingResult(request);
 
@@ -104,9 +110,18 @@ public class TraceController {
 				new FeatureJsonExporter() {
 			@Override
 			public void ppVertex(GlobalId id, JSONObject vertexWrapper) {
-				Double distance = result.getDistances().get(id);
-				if (distance != null) {
-					vertexWrapper.put("distance", distance);
+				if (BC_MODE) {
+					vertexWrapper.put("distance",
+							result.getDistances().values().stream().findFirst().get().get(id));
+				} else {
+					JSONObject distances = new JSONObject();
+					for (Entry<GlobalId, Map<GlobalId, Double>> startNode : result.getDistances().entrySet()) {
+						Double distance = startNode.getValue().get(id);
+						if (distance != null) {
+							distances.put(startNode.getKey().toString(), distance);
+						}
+					}
+					vertexWrapper.put("distances", distances);
 				}
 			}
 
@@ -247,15 +262,21 @@ public class TraceController {
 	}
 
 	private GraphTracingResult getGraphTracingResult(TraceRequest request) throws CQLException {
-		if (request.getStartNetwork() == null) {
-			throw new IllegalArgumentException("missing_start_network");
+		if (request.getStartNetwork() != null && request.getStartId() != null) {
+			//backwards compatibility			
+			if (request.getStartNodes() == null) {
+				request.setStartNodes(Lists.newArrayList());
+			}
+			TraceRequest.TraceRequestStartNode startNode = new TraceRequest.TraceRequestStartNode();
+			startNode.setNetwork(request.getStartNetwork());
+			startNode.setId(request.getStartId());			
+			request.getStartNodes().add(0, startNode);
 		}
-
-		if (request.getStartId() == null) {
-			throw new IllegalArgumentException("missing_start_id");
+		
+		if (request.getStartNodes() == null || request.getStartNodes().isEmpty()) {
+			throw new IllegalArgumentException("missing_start_nodes");
 		}
-
-		if (request.getNetworks() == null) {
+		if (request.getNetworks() == null || request.getNetworks().isEmpty()) {
 			throw new IllegalArgumentException("missing_networks");
 		}
 
@@ -268,7 +289,15 @@ public class TraceController {
 		}
 
 		return engine.trace(
-				new GlobalId(request.getStartNetwork(), request.getStartId()),
+				request.getStartNodes().stream().map(
+						n -> {
+							if (Strings.isNullOrEmpty(n.getNetwork())) {
+								throw new IllegalArgumentException("missing_start_network");
+							}
+							if (Strings.isNullOrEmpty(n.getId())) {
+								throw new IllegalArgumentException("missing_start_id");
+							}
+							return new GlobalId(n.getNetwork(), n.getId());}).collect(Collectors.toList()),
 				request.getMaxDistance(),
 				request.getNetworks().stream().map(n -> n.getName()).collect(Collectors.toList()),
 				request.getNetworks().stream().map(n -> n.getNodeFilter()).collect(Collectors.toList()),

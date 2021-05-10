@@ -22,7 +22,7 @@ public class GraphTracingResultImpl implements GraphTracingResult {
 	private Graph<Idp<GlobalId, SimpleFeature>, 
 		Idp<GlobalId, SimpleFeature>> graph;
 	
-	private Map<GlobalId, Double> distances;
+	private Map<GlobalId, Map<GlobalId, Double>> distances;
 
 	private Map<String, List<SimpleFeature>> areas;
 
@@ -35,7 +35,7 @@ public class GraphTracingResultImpl implements GraphTracingResult {
 	private boolean limitReached;
 		
 	public GraphTracingResultImpl(Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> graph,
-			Map<GlobalId, Double> distances,
+			Map<GlobalId, Map<GlobalId, Double>> distances,
 			Map<String, Map<GlobalId, Object>> aggregates,
 			Map<String, List<SimpleFeature>> areas,
 			List<Idp<GlobalId, SimpleFeature>> edges,
@@ -54,9 +54,8 @@ public class GraphTracingResultImpl implements GraphTracingResult {
 	public Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> getGraph() {
 		return graph;
 	}
-
 	@Override
-	public Map<GlobalId, Double> getDistances() {
+	public Map<GlobalId, Map<GlobalId, Double>> getDistances() {
 		return distances;
 	}
 
