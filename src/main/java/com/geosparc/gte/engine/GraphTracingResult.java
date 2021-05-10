@@ -27,10 +27,10 @@ public interface GraphTracingResult {
 	
 	/**
 	 * 
-	 * @return for each node, (minimal) distance from start node
+	 * @return for each start node and node, (minimal) distance
 	 * 
 	 */
-	Map<GlobalId, Double> getDistances();
+	Map<GlobalId, Map<GlobalId, Double>> getDistances();
 	
 	/**
 	 * 

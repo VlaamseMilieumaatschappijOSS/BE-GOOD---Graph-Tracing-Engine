@@ -1,0 +1,15 @@
+{
+ "startNodes": [
+	 { "network": "riool",
+	   "id": "ZG018_291505"},
+	 { "network": "riool",
+	   "id": "ZG018_356144"},
+	 { "network": "vha",
+	   "id": "6038245"}
+ ],
+ "maxDistance": 800,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}

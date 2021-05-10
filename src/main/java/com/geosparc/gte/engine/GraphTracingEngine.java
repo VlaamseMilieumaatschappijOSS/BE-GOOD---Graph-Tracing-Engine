@@ -37,7 +37,7 @@ public interface GraphTracingEngine {
 	 * @return the tracing result
 	 * @throws CQLException malformed filter
 	 */
-	GraphTracingResult trace(GlobalId startNode, Double maxDistance, 
+	GraphTracingResult trace(List<GlobalId> startNodes, Double maxDistance, 
 			List<String> networks, List<String> nodeFilters, List<String> edgeFilters,
 			List<Double> maxDistances, List<List<String>> edgeAggregatedAtts, boolean upstream,
 			boolean includeOverlappingAreas, List<String> overlapTypes, Long limit, boolean ignorePaths) throws CQLException;

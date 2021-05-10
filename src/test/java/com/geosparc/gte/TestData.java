@@ -433,7 +433,6 @@ public class TestData {
 		}
 
 		// -- second square
-		int start = gridsize+1;
 		for (int i = gridsize+2; i <= gridsize*2; i++) {
 			for (int j = gridsize+2; j <= gridsize*2; j++) {
 				// horizontal

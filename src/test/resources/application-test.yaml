@@ -78,7 +78,6 @@ areas:
     propertyForDetail: propertyForDetailTest
     propertyForFilter: propertyForFilterTest
     attributes:
-      - gid
       - Zone
       - Oppervlakt
       - EXTRA

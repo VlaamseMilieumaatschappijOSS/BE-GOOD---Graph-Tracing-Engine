@@ -273,7 +273,7 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 
 
     @Override
-    public GraphTracingResult trace(GlobalId startNode, Double maxDistance,
+    public GraphTracingResult trace(List<GlobalId> startNodes, Double maxDistance,
                                     List<String> networks, List<String> nodeFilters, List<String> edgeFilters,
                                     List<Double> maxDistances, List<List<String>> edgeAggregatedAtts,
                                     boolean upstream, boolean includeOverlappingAreas,
@@ -287,7 +287,7 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
             synchronized (graph) { // locks in case of reload, so no new tracings will happen while reloading
             }
 
-            FeatureGraphTracer tracer = new FeatureGraphTracer(graph, startNode, upstream, limit, ignorePaths);
+            FeatureGraphTracer tracer = new FeatureGraphTracer(graph, startNodes, upstream, limit, ignorePaths);
 
             if (networks.size() != nodeFilters.size()) {
                 throw new IllegalArgumentException();
@@ -361,14 +361,18 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
             }
             trace = retyper.process();
 
-            Map<GlobalId, Double> distances = new HashMap<>();
-            for (Idp<GlobalId, SimpleFeature> vertex : trace.vertexSet()) {
-                if (!vertex.getId().equals(startNode)) {
-                    distances.put(vertex.getId(), tracer.getDistance(vertex));
-                }
-            }
+			Map<GlobalId, Map<GlobalId, Double>> nodeDistances = new HashMap<>();
+			for (GlobalId startNode : startNodes) {
+				Map<GlobalId, Double> distances = new HashMap<>();
+				nodeDistances.put(startNode, distances);
+				for (Idp<GlobalId, SimpleFeature> vertex : trace.vertexSet()) {
+					if (!vertex.getId().equals(startNode)) {
+						distances.put(vertex.getId(), tracer.getDistance(startNode, vertex));
+					}
+				}
+			}
 
-            return new GraphTracingResultImpl(trace, distances, aggregates,
+            return new GraphTracingResultImpl(trace, nodeDistances, aggregates,
                     includeOverlappingAreas ? findOverlappingAreas(trace, overlapTypes) : null,
                     tracer.orderEdges(trace),
                     tracer.orderVertices(trace),

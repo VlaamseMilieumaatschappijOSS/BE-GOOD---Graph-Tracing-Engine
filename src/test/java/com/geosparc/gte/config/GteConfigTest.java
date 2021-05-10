@@ -2,7 +2,6 @@ package com.geosparc.gte.config;
 
 import com.geosparc.gte.config.ConnectionConfig.ConnectionType;
 import com.geosparc.gte.config.NetworkConfig.NodeType;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -107,12 +106,11 @@ public class GteConfigTest {
 
 		AreasConfig areas2 = configuration.getAreas().get(1);
 		assertEquals("Risicogebieden2", areas2.getName());
-		assertEquals(5, areas2.getAttributes().size());
-		assertEquals("gid", areas2.getAttributes().get(0));
-		assertEquals("Zone", areas2.getAttributes().get(1));
-		assertEquals("Oppervlakt", areas2.getAttributes().get(2));
-		assertEquals("EXTRA", areas2.getAttributes().get(3));
-		assertEquals("the_geom", areas2.getAttributes().get(4));
+		assertEquals(4, areas2.getAttributes().size());
+		assertEquals("Zone", areas2.getAttributes().get(0));
+		assertEquals("Oppervlakt", areas2.getAttributes().get(1));
+		assertEquals("EXTRA", areas2.getAttributes().get(2));
+		assertEquals("the_geom", areas2.getAttributes().get(3));
 
 		Map<String, String> ds = areas2.getDataStore();
 		assertNotNull(ds);

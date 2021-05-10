@@ -82,6 +82,38 @@ public class TraceRequest {
 		}
 		
 	}
+	
+	/**
+	 * Request parameters per network
+	 *
+	 */
+	public static class TraceRequestStartNode {
+		/**
+		 * Start network
+		 */
+		private String network;
+		
+		/**
+		 * Start id
+		 */
+		private String id;
+
+		public String getNetwork() {
+			return network;
+		}
+
+		public void setNetwork(String network) {
+			this.network = network;
+		}
+
+		public String getId() {
+			return id;
+		}
+
+		public void setId(String id) {
+			this.id = id;
+		}
+	}
 
 	public List<String> getOverlappingTypes() {
 		return overlappingTypes;
@@ -92,12 +124,21 @@ public class TraceRequest {
 	}
 	
 	/**
+	 * Start points (multiple are possible)
+	 */
+	private List<TraceRequestStartNode> startNodes;
+	
+	/**
 	 * Start network.
+	 * 
+	 * For backwards compatibility.
 	 */
 	private String startNetwork;
 	
 	/**
 	 * Start node/edge id
+	 * 
+	 * For backwards compatibility.
 	 */
 	private String startId;
 	
@@ -135,6 +176,14 @@ public class TraceRequest {
 	 * Stop paths that meet already visited vertices. Limits and predicates will not work correctly.
 	 */
 	private boolean ignorePaths;
+
+	public List<TraceRequestStartNode> getStartNodes() {
+		return startNodes;
+	}
+
+	public void setStartNodes(List<TraceRequestStartNode> startNodes) {
+		this.startNodes = startNodes;
+	}
 
 	public String getStartNetwork() {
 		return startNetwork;
