@@ -171,6 +171,11 @@ public class TraceRequest {
 	 * maximum amount of edges per single path
 	 */
 	private Long limit;
+	
+	/**
+	 * buffer for calculating buffer polygon
+	 */
+	private Double bufferSize;
 
 	/**
 	 * Stop paths that meet already visited vertices. Limits and predicates will not work correctly.
@@ -248,4 +253,14 @@ public class TraceRequest {
 	public void setIgnorePaths(boolean ignorePaths) {
 		this.ignorePaths = ignorePaths;
 	}
+
+	public Double getBufferSize() {
+		return bufferSize;
+	}
+
+	public void setBufferSize(Double bufferSize) {
+		this.bufferSize = bufferSize;
+	}
+	
+	
 }
