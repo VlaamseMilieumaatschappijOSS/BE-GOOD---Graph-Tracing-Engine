@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.jgrapht.Graph;
 import org.opengis.feature.simple.SimpleFeature;
+import org.locationtech.jts.geom.Geometry;
 
 import com.geosparc.graph.base.Idp;
 import com.geosparc.graph.geo.GlobalId;
@@ -33,6 +34,8 @@ public class GraphTracingResultImpl implements GraphTracingResult {
 	private Map<String, Map<GlobalId, Object>> aggregates;
 
 	private boolean limitReached;
+	
+	private Geometry buffer;
 		
 	public GraphTracingResultImpl(Graph<Idp<GlobalId, SimpleFeature>, Idp<GlobalId, SimpleFeature>> graph,
 			Map<GlobalId, Map<GlobalId, Double>> distances,
@@ -40,7 +43,8 @@ public class GraphTracingResultImpl implements GraphTracingResult {
 			Map<String, List<SimpleFeature>> areas,
 			List<Idp<GlobalId, SimpleFeature>> edges,
 			List<Idp<GlobalId, SimpleFeature>> vertices,
-			boolean limitReached) {
+			boolean limitReached,
+			Geometry buffer) {
 		this.graph = graph;
 		this.distances = distances;
 		this.areas = areas;
@@ -48,6 +52,7 @@ public class GraphTracingResultImpl implements GraphTracingResult {
 		this.vertices = vertices;
 		this.aggregates = aggregates;
 		this.limitReached = limitReached;
+		this.buffer = buffer;
 	}
 
 	@Override
@@ -83,6 +88,10 @@ public class GraphTracingResultImpl implements GraphTracingResult {
 	public boolean isLimitReached() {
 		return limitReached;
 	}
-	
 
+	@Override
+	public Geometry getBuffer() {
+		return buffer;
+	}
+	
 }

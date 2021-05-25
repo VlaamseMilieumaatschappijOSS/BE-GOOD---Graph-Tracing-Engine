@@ -29,9 +29,12 @@ import org.geotools.filter.text.cql2.CQL;
 import org.geotools.filter.text.cql2.CQLException;
 import org.geotools.util.logging.Logging;
 import org.jgrapht.Graph;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.locationtech.jts.geom.Geometry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
@@ -48,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.geosparc.gte.engine.GraphStatus.Status.UNINITIALIZED;
 
@@ -277,7 +281,8 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
                                     List<String> networks, List<String> nodeFilters, List<String> edgeFilters,
                                     List<Double> maxDistances, List<List<String>> edgeAggregatedAtts,
                                     boolean upstream, boolean includeOverlappingAreas,
-                                    List<String> overlapTypes, Long limit, boolean ignorePaths)
+                                    List<String> overlapTypes, Long limit, boolean ignorePaths,
+                                    Double bufferSize)
             throws CQLException {
 
         try {
@@ -332,7 +337,7 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
                     Idp<GlobalId, SimpleFeature>> trace = tracer.trace();
 
             Map<String, Map<GlobalId, Object>> aggregates = new HashMap<>();
-            for (int i = 0; i < edgeAggregatedAtts.size(); i++) {
+			for (int i = 0; i < edgeAggregatedAtts.size(); i++) {
                 NetworkConfig networkConfig = config.findNetworkByName(networks.get(i));
                 if (networkConfig != null && networkConfig.getEdgeFeature().getAggregatedAttributes() != null) {
                     for (AggregateConfig agg : networkConfig.getEdgeFeature().getAggregatedAttributes()) {
@@ -371,19 +376,37 @@ public class GraphTracingEngineImpl implements GraphTracingEngine {
 					}
 				}
 			}
+            
+            List<Idp<GlobalId, SimpleFeature>> edges = tracer.orderEdges(trace);
+            List<Idp<GlobalId, SimpleFeature>> vertices = tracer.orderVertices(trace);
 
             return new GraphTracingResultImpl(trace, nodeDistances, aggregates,
                     includeOverlappingAreas ? findOverlappingAreas(trace, overlapTypes) : null,
-                    tracer.orderEdges(trace),
-                    tracer.orderVertices(trace),
-                    tracer.isLimitReached());
+                    edges, vertices,
+                    tracer.isLimitReached(),
+                    createBuffer(bufferSize, edges));
 
         } catch (Exception ex) {
             throw ex;
         }
     }
 
-    /**
+    private Geometry createBuffer(Double bufferSize, List<Idp<GlobalId, SimpleFeature>> edges) {
+    	if (bufferSize == null) {
+			return null;
+		}		
+		GeometryFactory geomFac = new GeometryFactory();
+		List<Geometry> geometries = new ArrayList<>();
+		geometries.addAll(edges.stream()
+				.map(e -> (Geometry) e.getData().getDefaultGeometry())
+				.collect(Collectors.toList()));
+		GeometryCollection collection = geomFac.createGeometryCollection(
+				geometries.toArray(new Geometry[geometries.size()]));
+		
+    	return collection.buffer(bufferSize);
+	}
+
+	/**
      * Filter out connection edges at the ends of a trace result
      *
      * @param trace the result of a trace

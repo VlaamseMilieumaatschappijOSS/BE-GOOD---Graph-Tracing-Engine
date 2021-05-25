@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.jgrapht.Graph;
 import org.opengis.feature.simple.SimpleFeature;
+import org.locationtech.jts.geom.Geometry;
 
 import com.geosparc.graph.base.Idp;
 import com.geosparc.graph.geo.GlobalId;
@@ -66,5 +67,10 @@ public interface GraphTracingResult {
 	 * 
 	 */
 	boolean isLimitReached();
+	
+	/**
+	 * @return buffer if one was requested
+	 */
+	Geometry getBuffer();
 
 }

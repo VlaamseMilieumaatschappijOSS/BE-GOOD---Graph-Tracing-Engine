@@ -356,6 +356,16 @@ public class TraceControllerTest {
 		assertEquals("propertyForDetailTest", area2.getString("propertyForDetail"));
 		assertEquals("propertyForFilterTest", area2.getString("propertyForFilter"));
 	}
+	
+	@Test
+	public void testBuffer() throws Exception {
+		ResponseEntity<String> response = trace("request-buffer.json");
+		
+		JSONObject o = new JSONObject(response.getBody());
+		
+		assertTrue(o.has("buffer"));
+		assertEquals("Polygon", o.getJSONObject("buffer").getString("type"));
+	}
 
 	// ----------------------------------------------------
 

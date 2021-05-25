@@ -17,6 +17,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.geotools.filter.text.cql2.CQLException;
 import org.geotools.geojson.feature.FeatureJSON;
+import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.util.logging.Logging;
 import org.jgrapht.Graph;
 import org.jgrapht.io.ExportException;
@@ -166,6 +167,15 @@ public class TraceController {
 			}
 			jsonResult.put("overlappingAreas", jsonAreas);
 		}
+		if (result.getBuffer() != null) {
+			System.out.println(result.getBuffer());
+			jsonResult.put("buffer", new JSONStreamAware() {
+				@Override
+				public void writeJSONString(Writer out) throws IOException {
+					new GeometryJSON().write(result.getBuffer(), out);
+				}
+			});
+		}
 
 		jsonResult.put("warnings", getWarnings(result, locale));
 
@@ -308,7 +318,8 @@ public class TraceController {
 				request.isIncludeOverlappingAreas(),
 				request.getOverlappingTypes(),
 				request.getLimit(),
-				request.isIgnorePaths());
+				request.isIgnorePaths(),
+				request.getBufferSize());
 	}
 
 
