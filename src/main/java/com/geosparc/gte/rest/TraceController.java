@@ -177,17 +177,26 @@ public class TraceController {
 			});
 		}
 
-		jsonResult.put("warnings", getWarnings(result, locale));
+		jsonResult.put("warnings", getWarnings(request, result, locale));
 
 		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
 		jsonResult.writeJSONString(response.getWriter());
 	}
 
-	public List<String> getWarnings(GraphTracingResult result, Locale locale) {
+	public List<String> getWarnings(TraceRequest request, GraphTracingResult result, Locale locale) {
 		List<String> warnings = new ArrayList<>();
 		if (result.isLimitReached()) {
 			warnings.add(messageSource.getMessage("max_edges_reached",
 	        		new Object[] {}, locale));
+		}
+
+		if (request.getOverlappingTypes() != null) {
+			for (String type : request.getOverlappingTypes()) {
+				 if (config.findAreasByName(type) == null) {
+						warnings.add(messageSource.getMessage("unknown_area",
+				        		new Object[] {type}, locale));
+				 }
+			}
 		}
 		return warnings;
 	}
@@ -244,7 +253,7 @@ public class TraceController {
 							writer.write(network.getName() + " EdgeFilter: " + network.getEdgeFilter() + "\r\n");
 						}
 					}
-					for (String warning : getWarnings(result, locale)) {
+					for (String warning : getWarnings(request, result, locale)) {
 						writer.write("Warning: " + warning);
 					}
 				}
@@ -288,14 +297,6 @@ public class TraceController {
 		}
 		if (request.getNetworks() == null || request.getNetworks().isEmpty()) {
 			throw new IllegalArgumentException("missing_networks");
-		}
-
-		if (request.getOverlappingTypes() != null) {
-			for (String type : request.getOverlappingTypes()) {
-				 if (config.findAreasByName(type) == null) {
-					 LOGGER.warning("Overlapping areas type doesn't exist: " + type);
-				 }
-			}
 		}
 
 		return engine.trace(
