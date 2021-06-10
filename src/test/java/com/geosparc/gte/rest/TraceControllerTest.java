@@ -228,6 +228,10 @@ public class TraceControllerTest {
 		JSONObject areas = o.getJSONObject("overlappingAreas");
 		assertEquals(2, areas.length());
 		
+		JSONArray warnings = o.getJSONArray("warnings");
+		assertEquals(1, warnings.length());
+		assertEquals("The overlap type bestaatniet is unknown.", warnings.getString(0));
+		
 		JSONArray areasRisico = areas.getJSONArray("Risicogebieden2");
 		assertEquals(2, areasRisico.length());
 		JSONObject f = areasRisico.getJSONObject(0);
