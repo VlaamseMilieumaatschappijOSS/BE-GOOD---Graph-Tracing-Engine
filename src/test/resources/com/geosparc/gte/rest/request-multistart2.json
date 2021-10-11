@@ -1,0 +1,13 @@
+{
+ "startNodes": [
+	 { "network": "riool",
+		"id": "ZG018_356144"},
+	 { "network": "riool",
+	   "id": "ZG018_11659"}
+ ],
+ "upstream": true,
+ "networks": [
+    {"name": "riool"},
+    {"name": "vha"}
+ ]
+}
