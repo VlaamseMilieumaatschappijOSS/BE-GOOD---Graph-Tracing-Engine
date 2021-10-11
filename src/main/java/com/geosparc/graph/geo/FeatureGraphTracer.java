@@ -249,7 +249,9 @@ public class FeatureGraphTracer {
 			for (GlobalId source : sources) {
 				Idp<GlobalId, SimpleFeature> sourceVertex =
 					getSourceVertex(source, trace);
-				addNodeAndChildrenIfNotYetInThere(trace, result, sourceVertex);
+				if (trace.containsVertex(sourceVertex)) {
+					addNodeAndChildrenIfNotYetInThere(trace, result, sourceVertex);
+				}
 			}
 		}
 		assert result.size() == trace.vertexSet().size();
@@ -282,8 +284,10 @@ public class FeatureGraphTracer {
 			for (GlobalId source : sources) {
 				Idp<GlobalId, SimpleFeature> sourceVertex =
 						getSourceVertex(source, trace);
-				for (Idp<GlobalId, SimpleFeature> edge : trace.outgoingEdgesOf(sourceVertex)) {
-					addEdgeAndChildrenIfNotYetInThere(trace, result, edge);
+				if (trace.containsVertex(sourceVertex)) {
+					for (Idp<GlobalId, SimpleFeature> edge : trace.outgoingEdgesOf(sourceVertex)) {
+						addEdgeAndChildrenIfNotYetInThere(trace, result, edge);
+					}
 				}
 			}
 		}

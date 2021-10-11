@@ -151,6 +151,24 @@ public class TraceControllerTest {
 		JSONObject d = v.getJSONObject("distances");
 		assertEquals(69.98546, d.getDouble("riool:ZG018_291505"), 0.00001);
 	}
+	
+	@Test
+	public void testMultiStartRequest2() throws Exception {
+		// this has one node without results
+		// tests that it doesn't fail
+		ResponseEntity<String> response = trace("request-multistart2.json");
+				
+		JSONObject o = new JSONObject(response.getBody());
+		
+		JSONObject g = o.getJSONObject("graph");
+		JSONArray vs = g.getJSONArray("vertices");
+		assertEquals(3, vs.length());
+
+		JSONArray es = g.getJSONArray("edges");
+		assertEquals(2, es.length());
+
+
+	}
 
 	@Test
 	public void testFilteredRequest() throws JSONException, IOException {
