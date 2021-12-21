@@ -5,7 +5,7 @@
 
 	<groupId>com.geosparc</groupId>
 	<artifactId>vmm-gte</artifactId>
-	<version>1.0.9-SNAPSHOT</version>
+	<version>1.1</version>
 	<packaging>war</packaging>
 
 	<name>vmm-gte</name>
